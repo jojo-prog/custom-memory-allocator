@@ -3,26 +3,27 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <assert.h>
 
-typedef struct block *mem_block;
+#define align4(x) (((((x)-1) >> 2) << 2) + 4)
 
-struct block {
-    size_t size;
-    mem_block next;
-    mem_block prev;
+typedef struct meta_data *meta_data;
+
+struct meta_data
+{
     int free;
-    void* ptr;
+    size_t size;
+    meta_data next;
+    meta_data prev;
 };
 
-#define BLOCK_SIZE sizeof(struct block)
+#define META_DATA_SIZE sizeof(struct meta_data)
 
-mem_block head = NULL;
-mem_block last_added = NULL;
-
+void *heap_head = NULL;
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);
 
-void *custom_malloc(size_t size);
+void *malloc(size_t size);
 
 #endif // !CUSTOM_ALLOC_H
