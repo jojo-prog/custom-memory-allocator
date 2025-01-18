@@ -15,6 +15,8 @@ struct meta_data
     size_t size;
     meta_data next;
     meta_data prev;
+    void *ptr;
+
 };
 
 #define META_DATA_SIZE sizeof(struct meta_data)
@@ -24,6 +26,6 @@ void *heap_head = NULL;
 int brk(void *addr);
 void *sbrk(intptr_t increment);
 
-void *malloc(size_t size);
+void *custom_malloc(size_t size);
 
 #endif // !CUSTOM_ALLOC_H
