@@ -1,7 +1,7 @@
-#include "../custom_alloc_ff.c"
-#include "../custom_mem_management.c"
+
+#include <stdio.h>
 
 int main()
 {
-   
+    return 0;
 }
