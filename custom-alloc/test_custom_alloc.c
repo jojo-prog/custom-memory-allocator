@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "custom_alloc.h"
-#include "custom_alloc_ff.c"
+#include "custom_alloc.c"
 #include "custom_mem_management.c"
 
 void test_malloc_initial_allocation() {

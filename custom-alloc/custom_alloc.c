@@ -15,6 +15,7 @@
  * @return A meta_data pointer to the found free block, or NULL if no suitable 
  *         block is found.
  */
+// fitst fit
 meta_data find_free_block(meta_data *prev, size_t size)
 {
     meta_data current = heap_head;
@@ -96,7 +97,7 @@ meta_data insert_block(meta_data prev, size_t size)
         prev->next = block;
     }
     return block;
-    
+
 }
 
 /**
@@ -158,7 +159,7 @@ void *custom_malloc(size_t size)
         }
     }
 
-    return block +1;
+    return block + 1;
 
 }
 

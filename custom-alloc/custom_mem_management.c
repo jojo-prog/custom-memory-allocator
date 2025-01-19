@@ -43,7 +43,6 @@ int is_valid_addr(void *p)
   return 0;
 }
 
-
 /**
  * @brief Frees the memory space pointed to by ptr, which must have been returned by a previous call to custom_malloc, custom_calloc, or custom_realloc.
  * 
