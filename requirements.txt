@@ -6,3 +6,4 @@
     Implementation of the free function should support the merging of adjacent free blocks, reducing fragmentation.
 3.  realloc()
 4.  calloc()
+5.  Testing
