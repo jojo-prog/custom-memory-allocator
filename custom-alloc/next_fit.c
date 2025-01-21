@@ -7,7 +7,7 @@ static meta_data last_allocated = NULL; //static pointer to track the last alloc
 //and continues the search in a circular manner through the linked list of memory blocks.
 meta_data find_free_block(meta_data *prev, size_t size)
 {
-    //if heap_head is NULL, no memory blocks exist
+   //if heap_head is NULL, no memory blocks exist
    if (!heap_head){
       return NULL;
    } 
