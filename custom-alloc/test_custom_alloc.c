@@ -47,7 +47,7 @@ void test_free_already_freed_block() {
 
 void test_correct_split_block() {
     void *ptr = custom_malloc(100);
-    meta_data block = get_block_ptr(ptr);
+    meta_data block = get_block_addr(ptr);
     split_block(block, 50);
     assert(block->size == 50);
     assert(block->next->size == 50 - META_DATA_SIZE);
@@ -57,7 +57,7 @@ void test_correct_split_block() {
 
 void test_correct_merge_blocks() {
     void *ptr = custom_malloc(100);
-    meta_data block = get_block_ptr(ptr);
+    meta_data block = get_block_addr(ptr);
     split_block(block, 50);
 
     custom_free(ptr);
