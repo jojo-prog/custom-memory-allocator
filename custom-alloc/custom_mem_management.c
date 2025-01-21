@@ -91,10 +91,35 @@ void custom_free(void *ptr)
 
 void *custom_realloc(void *ptr, size_t size)
 {
-  return NULL;
+  if (!ptr)
+  {
+    return custom_malloc(size);
+  }
+  if (!is_valid_addr(ptr))
+  {
+    return NULL;
+  }
+  meta_data block = get_block_addr(ptr);
+  if (block->size >= size)
+  {
+    return ptr;
+  }
+  void *new_ptr;
+  new_ptr = custom_malloc(size);
+  if (!new_ptr)
+  {
+    return NULL;
+  }
+  memcpy(new_ptr, ptr, block->size);
+  custom_free(ptr);
+  return new_ptr;
+
 }
 
 void *custom_calloc(size_t nelem, size_t elsize)
 {
-  return NULL;
+  size_t size = nelem * elsize;
+  void *ptr = custom_malloc(size);
+  memset(ptr, 0, size);
+  return ptr;
 }
