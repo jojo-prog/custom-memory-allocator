@@ -1,0 +1,34 @@
+1. Efficient Memory Allocation Techniques
+
+    Use segregated free lists: Maintain separate free lists for different size classes of allocations. This avoids searching through unrelated memory blocks and improves allocation speed.
+
+    Binning by size: Divide memory into bins of fixed-size blocks. Requests are rounded up to the nearest bin size, reducing fragmentation and allocation overhead.
+
+--> Buddy allocation system: Divide memory into powers-of-two-sized blocks. This allows for efficient splitting and coalescing of memory, reducing fragmentation.
+
+    Slab allocation: Use fixed-size memory blocks for frequently requested object sizes. This is particularly useful for objects with predictable or uniform sizes, like objects in a cache.
+
+2. Fragmentation Mitigation
+
+    Address alignment: Align memory allocations to power-of-two boundaries. This reduces fragmentation by ensuring predictable block placement.
+
+    Best-fit or first-fit policies: Experiment with different allocation policies (e.g., best-fit, first-fit, next-fit) to minimize fragmentation. Each policy has trade-offs between speed and fragmentation.
+
+    Deferred coalescing: Delay merging of adjacent free blocks until necessary (e.g., during larger allocations) to reduce overhead during frequent allocation/free operations.
+
+
+5. Cache Optimization
+
+    Optimize for locality: Allocate memory blocks close together to improve spatial locality, which can enhance cache performance.
+
+    Minimize false sharing: Align allocations to cache-line boundaries to reduce cache contention in multithreaded applications.
+
+    Hot/cold splitting: Separate frequently accessed (hot) and infrequently accessed (cold) memory regions to improve CPU cache performance.
+
+7. Metadata Management
+
+    Inline metadata storage: Store metadata (e.g., block size, free/allocated status) inline with memory blocks to reduce external storage overhead.
+
+ --> Compact metadata representation: Use efficient data structures (e.g., bitmaps, headers, or boundary tags) to minimize the memory overhead for bookkeeping.
+
+ --> Alignment-aware metadata: Ensure metadata structures respect alignment requirements to avoid wasting memory or introducing fragmentation.
