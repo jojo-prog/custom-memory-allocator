@@ -37,33 +37,29 @@ meta_data find_free_block(meta_data *prev, size_t size)
  * @param big_block The larger memory block to be split.
  * @param size The size of the smaller block to be created.
  */
-void split_block(meta_data big_block, size_t size)
+void split_block(meta_data block, size_t size)
 {
-    void* start_meta_data1 = big_block;
-    void* start_meta_data2 = big_block + META_DATA_SIZE + size;
-    int new_size = big_block->size - size - META_DATA_SIZE;
+    // Calculate the address of the new block
+    void* new_block_address = (void*)((char*)(block + 1) + size);
 
-    meta_data block1 = start_meta_data1;
-    block1->size = size;
-    block1->next = start_meta_data2;
-    block1->prev = big_block->prev;
-    block1->free = 0;
+    // Initialize the new block
+    meta_data new_block = (meta_data)new_block_address;
+    new_block->size = block->size - size - META_DATA_SIZE;
+    new_block->free = 1; // Mark as free
+    new_block->next = block->next;
+    new_block->prev = block;
 
-    meta_data block2 = start_meta_data2;
-    block2->size = new_size;
-    block2->next = big_block->next;
-    block2->prev = block1;
-    block2->free = 1;
+    // Update the original block
+    block->size = size;
+    block->next = new_block;
 
-    if (block2->next)
+    // Update the next block's prev pointer if it exists
+    if (new_block->next)
     {
-        block2->next->prev = block2;
+        new_block->next->prev = new_block;
     }
-
-
-
-    
 }
+
 
 /**
  * @brief Inserts a new memory block into the linked list of memory blocks.
@@ -80,7 +76,6 @@ meta_data insert_block(meta_data prev, size_t size)
 {
     void* start_meta_data = sbrk(0); // get current break address
     void* end_address = sbrk(size + META_DATA_SIZE); // increment break address by size
-    void* start_address = start_meta_data + META_DATA_SIZE; // start address of the block
     if (end_address == (void*)-1)
     {
         return NULL;
@@ -90,7 +85,6 @@ meta_data insert_block(meta_data prev, size_t size)
     block->size = size;
     block->next = NULL;
     block->prev = prev;
-    block->ptr = start_address;
     block->free = 0;
     if (prev)
     {
@@ -125,7 +119,7 @@ void *custom_malloc(size_t size)
     if (!heap_head)
     {
         // create the first block
-        block = insert_block(NULL, size);
+        block = insert_block(NULL, s);
         if (!block)
         {
             return NULL;
@@ -136,11 +130,11 @@ void *custom_malloc(size_t size)
     {
        // find a free block
         meta_data prev = NULL;
-        block = find_free_block(&prev, size);
+        block = find_free_block(&prev, s);
         if (!block)
         {
             // no free block found, create a new block
-            block = insert_block(prev, size);
+            block = insert_block(prev, s);
             if (!block)
             {
                 return NULL;
@@ -148,18 +142,16 @@ void *custom_malloc(size_t size)
         }
         else
         {
-            if (block->size - s >= (META_DATA_SIZE + 4))
+           block->free = 0;
+           // implement splitting of the block
+           if (block->size > s + META_DATA_SIZE)
             {
-                // if the requested block and another block with size 1 fits in the free block
-                split_block(block, size);
-            } else {
-                block->free = 0;
-                // 
+                split_block(block, s);
             }
         }
     }
 
-    return block + 1;
+    return (void*) (block + 1);
 
 }
 
