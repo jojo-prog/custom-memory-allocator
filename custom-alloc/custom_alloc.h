@@ -10,7 +10,7 @@
      * @param size The size to be aligned.
      * @return The size aligned to the nearest multiple of 4.
  */
-#define align4(x) (((((x)-1) >> 2) << 2) + 4)
+#define align4(x) (((((x)-1) >>2) << 2) + 4)
 
 typedef struct meta_data *meta_data;
 
@@ -24,15 +24,16 @@ typedef struct meta_data *meta_data;
  */
 struct meta_data
 {
-    int free;
-    size_t size;
-    meta_data next;
-    meta_data prev;
-    void *ptr;
-
+    size_t size;               // Block size
+    meta_data next;    // Next free block
+    meta_data prev;    // Previous free block (optional)
+    //void* ptr;          // Pointer to the memory block
+    unsigned int free;     // 1-bit for free status
+    
 };
 
-#define META_DATA_SIZE sizeof(struct meta_data)
+
+#define META_DATA_SIZE 32
 
 void *heap_head = NULL;
 
