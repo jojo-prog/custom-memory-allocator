@@ -27,13 +27,13 @@ struct meta_data
     size_t size;               // Block size
     meta_data next;    // Next free block
     meta_data prev;    // Previous free block (optional)
-    //void* ptr;          // Pointer to the memory block
+    void* ptr;          // Pointer to the memory block
     unsigned int free;     // 1-bit for free status
     
 };
 
 
-#define META_DATA_SIZE 32
+#define META_DATA_SIZE sizeof(struct meta_data)
 
 void *heap_head = NULL;
 

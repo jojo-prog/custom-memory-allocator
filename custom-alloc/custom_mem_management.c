@@ -85,7 +85,10 @@ void custom_free(void *ptr)
     {
       heap_head = NULL;
     }
-    brk(block);
+    if ((char *)block + block->size + META_DATA_SIZE == sbrk(0))
+    {
+        sbrk(0 - (block->size + META_DATA_SIZE));
+    }
   }
 }
 

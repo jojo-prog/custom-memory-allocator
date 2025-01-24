@@ -34,13 +34,13 @@ meta_data find_free_block(meta_data *prev, size_t size)
  * of the specified size. The remaining part of the larger block is kept as a
  * free block.
  *
- * @param big_block The larger memory block to be split.
+ * @param block The larger memory block to be split.
  * @param size The size of the smaller block to be created.
  */
 void split_block(meta_data block, size_t size)
 {
     // Calculate the address of the new block
-    void* new_block_address = (void*)((char*)(block + 1) + size);
+    void* new_block_address = (void*)((char*)block + size + META_DATA_SIZE);
 
     // Initialize the new block
     meta_data new_block = (meta_data)new_block_address;
@@ -48,6 +48,7 @@ void split_block(meta_data block, size_t size)
     new_block->free = 1; // Mark as free
     new_block->next = block->next;
     new_block->prev = block;
+    new_block->ptr = (void*)(new_block + 1);
 
     // Update the original block
     block->size = size;
@@ -75,6 +76,11 @@ void split_block(meta_data block, size_t size)
 meta_data insert_block(meta_data prev, size_t size)
 {
     void* start_meta_data = sbrk(0); // get current break address
+    if (start_meta_data == (void*)-1)
+    {
+        return NULL;
+    }
+
     void* end_address = sbrk(size + META_DATA_SIZE); // increment break address by size
     if (end_address == (void*)-1)
     {
@@ -85,7 +91,10 @@ meta_data insert_block(meta_data prev, size_t size)
     block->size = size;
     block->next = NULL;
     block->prev = prev;
-    block->free = 0;
+    if (block) {
+        block->free = 0;
+    }
+    block->ptr = block + 1;
     if (prev)
     {
         prev->next = block;
@@ -107,14 +116,14 @@ meta_data insert_block(meta_data prev, size_t size)
  */
 void *custom_malloc(size_t size)
 {
-    size_t s;
-    s = align4(size);
     if (size <= 0)
     {
         return NULL;
     }
+    size_t s;
+    s = align4(size);
 
-    meta_data block;
+    meta_data block = NULL;
 
     if (!heap_head)
     {
@@ -149,9 +158,8 @@ void *custom_malloc(size_t size)
                 split_block(block, s);
             }
         }
-    }
+    return block + 1;
 
-    return (void*) (block + 1);
 
 }
 

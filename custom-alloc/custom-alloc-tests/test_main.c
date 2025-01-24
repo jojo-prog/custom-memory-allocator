@@ -3,15 +3,9 @@
 
 int main()
 {
-    int *a = custom_malloc(10 * sizeof(int));
-    int *b = custom_malloc(10 * sizeof(int));
-    int *c = custom_malloc(10 * sizeof(int));
-    int *d = custom_malloc(10 * sizeof(int));
-
+    int *a = custom_malloc(sizeof(int));
     custom_free(a);
-    custom_free(b);
-    custom_free(c);
-    custom_free(d);
+    a[0] = 5;
 
     return 0;
 }
