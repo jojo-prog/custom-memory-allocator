@@ -12,13 +12,13 @@ meta_data best_fit(meta_data *prev, size_t size)
 {
    // implement best fit
 
-   meta_data current = heap_head;
+   meta_data current = mem_pool;
    meta_data best_fit_ptr = NULL;
    size_t min_size = -1;
 
    while (current)
    {
-       if (current->free && current->size >= size && current->size < min_size)
+       if (is_valid_addr(current) && current->free && current->size >= size && current->size < min_size)
        {
            best_fit_ptr = current;
            min_size = current->size;
@@ -34,50 +34,8 @@ meta_data best_fit(meta_data *prev, size_t size)
 
 meta_data next_fit(meta_data *prev, size_t size)
 {
-   static meta_data last_allocated = NULL; //static pointer to track the last allocated block
-   //if heap_head is NULL, no memory blocks exist
-   if (!heap_head){
-      return NULL;
-   } 
-
-   //start searching from the last allocated block or the beginning of the heap
-   meta_data current;
-   if (last_allocated) {
-      current = last_allocated;
-   } else {
-      current = heap_head;
-   }
-   *prev = NULL;
-
-   //search the linked list of blocks in a circular fashion
-   while (1) {
-      if (current->free && current->size >= size) {
-         last_allocated = current;  
-         return current;
-      }
-
-      //update prev and move to the next block
-      *prev = current;
-      current = current->next;
-
-      //if we reach the end, wrap around to the beginning of the heap
-      if (!current){
-         current = heap_head;
-      } 
-
-      //stop searching if we return to the starting point
-      meta_data start_point;
-
-      if (last_allocated) {
-         start_point = last_allocated;
-      } else {
-         start_point = heap_head;
-      }
-      if (current == start_point) {
-         break;
-      }
-   }
-   return NULL; //no suitable free block found
+   
+    // TODO: implement next fit algorithm
 }
 
 
@@ -85,7 +43,7 @@ meta_data first_fit(meta_data *prev, size_t size)
 {
     // implement first fit algorithm
 
-    meta_data current = heap_head;
+    meta_data current = mem_pool;
     while (current && !(current->free && current->size >= size))
     {
         *prev = current;
@@ -128,7 +86,7 @@ unsigned long* test_malloc(int max_allocations, meta_data (*find_free_block)(met
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             size_t size = (rand() % MAX_SIZE) + 1;
             pointers[allocated_count] = custom_malloc(size, find_free_block);
-            pointers[allocated_count] = malloc(size);
+            //pointers[allocated_count] = malloc(size);
     
 
             if (pointers[allocated_count] == NULL) {
@@ -197,18 +155,16 @@ char* to_string(unsigned long* result) {
 }
 
 int main(void) {
-    FILE *fp = fopen("output.txt", "w");
+    FILE *fp = fopen("best_fit_output.txt", "w");
     if (fp == NULL) {
         perror("fopen failed");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 9900; i < MAX_ALLOCATIONS; i++)
+    for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
-        unsigned long* result1 = test_malloc(i, &first_fit);
-        //unsigned long* result2 = test_malloc(MAX_ALLOCATIONS, &next_fit);
-        //unsigned long* result3 = test_malloc(MAX_ALLOCATIONS, &best_fit);
-        char* str1 = to_string(result1);
+        unsigned long* result = test_malloc(i, &best_fit);
+        char* str1 = to_string(result);
         //char* str2 = to_string(result2);
 
         fwrite(str1, strlen(str1),1, fp);
@@ -218,13 +174,13 @@ int main(void) {
         //write(fp, result3, sizeof(unsigned long) * 2);
 
 
-        printf("%d First fit: Average allocation duration: %lu, Average heap size: %lu\n",i ,result1[0], result1[1]);
+        printf("%d Average allocation duration: %lu, Average heap size: %lu\n",i ,result[0], result[1]);
         //printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
-        //printf("Best fit: Average allocation duration: %lu, Average heap size: %lu\n", result3[0], result3[1]);
+    
 
-        free(result1);
+        //free(result1);
         //free(result2);
-        //free(result3);
+        free(result);
     }
 
     fclose(fp);

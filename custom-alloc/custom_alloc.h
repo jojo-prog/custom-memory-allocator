@@ -1,6 +1,6 @@
 #ifndef CUSTOM_ALLOC_H
 #define CUSTOM_ALLOC_H
-
+#define _BSD_SOURCE
 #include <unistd.h>
 #include <stdint.h>
 #include <assert.h>
@@ -11,9 +11,12 @@
      * @param size The size to be aligned.
      * @return The size aligned to the nearest multiple of 4.
  */
-#define align4(x) (((((x)-1) >>2) << 2) + 4)
 
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#define MEM_ALLOC_LOT_SIZE (1 * PAGE_SIZE)
+#define MEM_DEALLOC_LOT_SIZE (2 * PAGE_SIZE)
 typedef struct meta_data *meta_data;
+
 
 /**
  * struct meta_data - Structure to hold metadata for custom memory allocator.
@@ -35,8 +38,11 @@ struct meta_data
 
 
 #define META_DATA_SIZE sizeof(struct meta_data)
+#define WRITABLE_AREA(p) (((meta_data )p) + 1)
+#define HEADER_AREA(p) (((meta_data )p) - 1)
+#define MAX(X, Y) (((size_t)(X) > (size_t)(Y)) ? (size_t)(X) : (size_t)(Y))
 
-void *heap_head = NULL;
+meta_data mem_pool = NULL;
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);
@@ -45,6 +51,8 @@ void *custom_malloc(size_t size, meta_data find_free_block(meta_data *prev, size
 void custom_free(void *ptr);
 void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size));
 void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size));
+
+int is_valid_addr(void *p);
 
 
 #endif // !CUSTOM_ALLOC_H

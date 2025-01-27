@@ -1,3 +1,1 @@
--   research how to test for memory usage
--   implement:  Best Fit, First Fit, and Next Fit.
--   implement: calloc, realloc
+-  implement memory pool

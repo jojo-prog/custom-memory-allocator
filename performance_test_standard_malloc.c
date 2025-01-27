@@ -1,4 +1,4 @@
-
+#include "./custom-alloc/custom_alloc.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -8,19 +8,40 @@
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 
-void test_malloc_with_random_sizes() {
-    void* pointers[MAX_ALLOCATIONS] = {NULL};
+
+size_t get_heap_size() {
+    // Use sbrk(0) to get the current program break
+    void *current_break = sbrk(0);
+
+    // The initial program break represents the base of the heap
+    static void *heap_base = NULL;
+
+    // Initialize the heap base if this is the first call
+    if (heap_base == NULL) {
+        heap_base = current_break;
+    }
+
+    // Calculate the heap size as the difference between the current break and the base
+    return (size_t)((char *)current_break - (char *)heap_base);
+}
+
+
+unsigned long* test_malloc(int max_allocations) {
+    void* pointers[max_allocations];
+    size_t heap_sizes[max_allocations];
+    unsigned long allocation_duration[max_allocations];
     int allocated_count = 0;
 
     srand(time(NULL)); // Seed for random number generation
-
-    for (int i = 0; i < MAX_ALLOCATIONS; i++) {
+    unsigned long start_time = clock();
+    for (int i = 0; i < max_allocations; i++) {
         int action = rand() % 100; // Generate a random number between 0 and 99
 
-        if (action < ALLOC_PROB && allocated_count < MAX_ALLOCATIONS) {
+        if (action < ALLOC_PROB && allocated_count < max_allocations) {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             size_t size = (rand() % MAX_SIZE) + 1;
             pointers[allocated_count] = malloc(size);
+    
 
             if (pointers[allocated_count] == NULL) {
                 perror("malloc failed");
@@ -34,26 +55,85 @@ void test_malloc_with_random_sizes() {
             int free_index = rand() % allocated_count;
 
             if (pointers[free_index] != NULL) {
+               
                 free(pointers[free_index]);
+                
                 //printf("Freed memory at index %d\n", free_index);
                 pointers[free_index] = NULL;
             }
         }
+        unsigned long end_time = clock();
+        allocation_duration[i] = end_time - start_time;
+        heap_sizes[i] = get_heap_size();
+
     }
+    
 
     // Free any remaining allocated memory
     for (int i = 0; i < allocated_count; i++) {
         if (pointers[i] != NULL) {
             free(pointers[i]);
-           // printf("Freed remaining memory at index %d\n", i);
+            //printf("Freed remaining memory at index %d\n", i);
             pointers[i] = NULL;
         }
     }
 
+    // compute avarage allocation duration
+    long total_duration = 0;
+    for (int i = 0; i < max_allocations; i++) {
+        total_duration += allocation_duration[i];
+    }
+    long average_duration = total_duration / max_allocations;
+
+    // compute avarage heap size
+    size_t total_heap_size = 0;
+    for (int i = 0; i < max_allocations; i++) {
+        total_heap_size += heap_sizes[i];
+    }
+    size_t average_heap_size = total_heap_size / max_allocations;
+
     //printf("All memory has been freed.\n");
+    unsigned long* result = (unsigned long*)malloc(2 * sizeof(unsigned long));
+    result[0] = average_duration;
+    result[1] = average_heap_size;
+    return result;
 }
 
-int main() {
-    test_malloc_with_random_sizes();
+char* to_string(unsigned long* result) {
+    char* str = (char*)malloc(100 * sizeof(char));
+    sprintf(str, "%lu %lu\n", result[0], result[1]);
+    return str;
+}
+
+int main(void) {
+    FILE *fp = fopen("standard_output.txt", "w");
+    if (fp == NULL) {
+        perror("fopen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 1; i < MAX_ALLOCATIONS; i++)
+    {
+        unsigned long* result1 = test_malloc(i);
+        char* str1 = to_string(result1);
+        //char* str2 = to_string(result2);
+
+        fwrite(str1, strlen(str1),1, fp);
+
+        
+
+
+        printf("%d First fit: Average allocation duration: %lu, Average heap size: %lu\n",i ,result1[0], result1[1]);
+
+        free(result1);
+    }
+
+    fclose(fp);
+
+   
+
+
+   
+
     return 0;
 }
