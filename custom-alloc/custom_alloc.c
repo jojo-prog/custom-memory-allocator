@@ -114,7 +114,7 @@ meta_data insert_block(meta_data prev, size_t size)
  * @param size The size of the memory block to allocate, in bytes.
  * @return void* A pointer to the allocated memory block, or NULL if the allocation fails.
  */
-void *custom_malloc(size_t size)
+void *custom_malloc(size_t size, meta_data find_free_block(meta_data *prev, size_t size))
 {
     if (size <= 0)
     {
@@ -257,11 +257,11 @@ void custom_free(void *ptr)
   }
 }
 
-void *custom_realloc(void *ptr, size_t size)
+void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size))
 {
   if (!ptr)
   {
-    return custom_malloc(size);
+    return custom_malloc(size, find_free_block);
   }
   if (!is_valid_addr(ptr))
   {
@@ -273,7 +273,7 @@ void *custom_realloc(void *ptr, size_t size)
     return ptr;
   }
   void *new_ptr;
-  new_ptr = custom_malloc(size);
+  new_ptr = custom_malloc(size, find_free_block);
   if (!new_ptr)
   {
     return NULL;
@@ -284,10 +284,10 @@ void *custom_realloc(void *ptr, size_t size)
 
 }
 
-void *custom_calloc(size_t nelem, size_t elsize)
+void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size))
 {
   size_t size = nelem * elsize;
-  void *ptr = custom_malloc(size);
+  void *ptr = custom_malloc(size, find_free_block);
   memset(ptr, 0, size);
   return ptr;
 }

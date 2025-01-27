@@ -1,6 +1,6 @@
 #include "custom_alloc.h"
 
-meta_data find_free_block(meta_data *prev, size_t size)
+meta_data first_fit(meta_data *prev, size_t size)
 {
     // implement first fit algorithm
 

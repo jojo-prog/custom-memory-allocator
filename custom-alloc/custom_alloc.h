@@ -41,6 +41,10 @@ void *heap_head = NULL;
 int brk(void *addr);
 void *sbrk(intptr_t increment);
 
-void *custom_malloc(size_t size);
+void *custom_malloc(size_t size, meta_data find_free_block(meta_data *prev, size_t size));
+void custom_free(void *ptr);
+void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size));
+void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size));
+
 
 #endif // !CUSTOM_ALLOC_H
