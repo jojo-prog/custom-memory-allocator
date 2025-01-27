@@ -1,6 +1,6 @@
 #include "custom_alloc.h"
 
-static meta_data last_allocated = NULL; //static pointer to track the last allocated block
+meta_data last_allocated = NULL; //static pointer to track the last allocated block
 
 
 //This function searches for a free memory block starting from the last allocated block (`last_allocated`) 

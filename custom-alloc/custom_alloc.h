@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
  /**
      * Aligns the given size to the nearest multiple of 4.
      *

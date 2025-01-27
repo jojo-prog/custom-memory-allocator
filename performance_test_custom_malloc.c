@@ -1,5 +1,4 @@
 #include "./custom-alloc/custom_alloc.c"
-#include "./custom-alloc/custom_mem_management.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -57,7 +56,7 @@ void test_malloc_with_random_sizes() {
     //printf("All memory has been freed.\n");
 }
 
-int main() {
+int main(void) {
     test_malloc_with_random_sizes();
     return 0;
 }
