@@ -58,7 +58,7 @@ void split_block(meta_data block, size_t size)
 
 
 /**
- * @brief Merges consecutive free memory blocks into a single block.
+ * @brief Merges consecutive free memory blocks into a single block
  *
  * This function iterates through the memory pool and merges adjacent free
  * memory blocks into a single larger block to reduce fragmentation.
