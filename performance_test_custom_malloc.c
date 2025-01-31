@@ -8,51 +8,7 @@
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 
-meta_data best_fit(meta_data *prev, size_t size)
-{
-   // implement best fit
 
-   meta_data current = mem_pool;
-   meta_data best_fit_ptr = NULL;
-   size_t min_size = -1;
-
-   while (current)
-   {
-       if (is_valid_addr(current) && current->free && current->size >= size && current->size < min_size)
-       {
-           best_fit_ptr = current;
-           min_size = current->size;
-           *prev = current;
-       }
-       current = current->next;
-   }
-
-    return best_fit_ptr;
-
-}
-
-
-meta_data next_fit(meta_data *prev, size_t size)
-{
-   
-    // TODO: implement next fit algorithm
-}
-
-
-meta_data first_fit(meta_data *prev, size_t size)
-{
-    // implement first fit algorithm
-
-    meta_data current = mem_pool;
-    while (current && !(current->free && current->size >= size))
-    {
-        *prev = current;
-        current = current->next;
-    }
-
-    return current;
-
-}
 
 size_t get_heap_size() {
     // Use sbrk(0) to get the current program break
@@ -71,7 +27,7 @@ size_t get_heap_size() {
 }
 
 
-unsigned long* test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data*, size_t)) {
+unsigned long* test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data *prev,size_t size)) {
     void* pointers[max_allocations];
     size_t heap_sizes[max_allocations];
     unsigned long allocation_duration[max_allocations];
@@ -154,8 +110,9 @@ char* to_string(unsigned long* result) {
     return str;
 }
 
-int main(void) {
-    FILE *fp = fopen("best_fit_output.txt", "w");
+void run_test(char* filename, meta_data (*find_free_block)(meta_data*,size_t))
+{
+    FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
         perror("fopen failed");
         exit(EXIT_FAILURE);
@@ -163,7 +120,7 @@ int main(void) {
 
     for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
-        unsigned long* result = test_malloc(i, &best_fit);
+        unsigned long* result = test_malloc(i, find_free_block);
         char* str1 = to_string(result);
         //char* str2 = to_string(result2);
 
@@ -184,11 +141,22 @@ int main(void) {
     }
 
     fclose(fp);
+}
 
+void test_next_fit()
+{
+    void* mem = custom_malloc(100, next_fit);
+    void* mem2 = custom_malloc(200, next_fit);
+    custom_free(mem);
+    custom_free(mem2);
+}
+
+int main(void) {
+    
+   //test_next_fit();
+   run_test("best_fit.txt", &best_fit);
    
 
-
-   
 
     return 0;
 }

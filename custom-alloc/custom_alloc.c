@@ -1,7 +1,87 @@
 #include "custom_alloc.h"
 
-// Aligns the given size to the nearest multiple of alignment
+meta_data best_fit(meta_data *prev, size_t size)
+{
+  // implement best fit
 
+  meta_data current = mem_pool;
+  meta_data best_fit_ptr = NULL;
+  size_t min_size = -1;
+
+  while (current)
+  {
+    if (is_valid_addr(current) && current->free && current->size >= size && current->size < min_size)
+    {
+      *prev = current->prev;
+      best_fit_ptr = current;
+      min_size = current->size;
+    }
+    current = current->next;
+  }
+
+  return best_fit_ptr;
+}
+
+meta_data next_fit(meta_data *prev, size_t size)
+{
+
+  // TODO: implement next fit algorithm
+
+  if (last_allocated == NULL)
+  {
+    last_allocated = mem_pool;
+  }
+
+  meta_data current = last_allocated;
+  while (current)
+  {
+    if (is_valid_addr(current) && current->free && current->size >= size)
+    {
+      *prev = current->prev;
+      last_allocated = current;
+      return current;
+    }
+    current = current->next;
+  }
+
+  current = mem_pool;
+
+  while (current && current != last_allocated)
+  {
+    if (is_valid_addr(current) && current->free && current->size >= size)
+    {
+      *prev = current->prev;
+      last_allocated = current;
+      return current;
+    }
+    current = current->next;
+  }
+
+  return NULL;
+}
+
+meta_data first_fit(meta_data *prev, size_t size)
+{
+  // implement first fit algorithm
+
+  meta_data current = mem_pool;
+  while (current && !(current->free && current->size >= size))
+  {
+    *prev = current;
+    current = current->next;
+  }
+
+  return current;
+}
+
+/**
+ * @brief Adds a memory block to the memory pool.
+ *
+ * This function takes a memory block described by the meta_data structure
+ * and adds it to the memory pool for future allocations.
+ *
+ * @param mem The memory block to be added to the pool.
+ */
 void add_mem_to_pool(meta_data mem)
 {
   if (mem_pool == NULL)
@@ -13,14 +93,13 @@ void add_mem_to_pool(meta_data mem)
   }
 
   meta_data parent = mem_pool;
-  while (is_valid_addr(parent)&&parent->next != NULL)
+  while (is_valid_addr(parent) && parent->next != NULL)
     parent = parent->next;
 
   parent->next = mem;
   mem->prev = parent;
   mem->next = NULL;
 }
-
 
 /**
  * @brief Splits a larger memory block into a smaller block of the requested size.
@@ -56,7 +135,6 @@ void split_block(meta_data block, size_t size)
   }
 }
 
-
 /**
  * @brief Merges consecutive free memory blocks into a single block.
  *
@@ -89,13 +167,20 @@ void merge_free_blocks()
   }
 }
 
+/**
+ * @brief Releases memory if certain conditions are met.
+ *
+ * This function checks specific conditions and releases memory accordingly.
+ * The exact conditions and the memory release mechanism should be detailed
+ * within the function implementation.
+ */
 void release_memory_if_required()
 {
 
   meta_data ptr = mem_pool;
   meta_data free_area_start = NULL;
   size_t totalFreeSpace = 0;
-
+  // computes the total free space available in the memory pool and keeps track of the starting address of the free area
   while (ptr)
   {
     if (ptr->free)
@@ -106,11 +191,11 @@ void release_memory_if_required()
     else
     {
       free_area_start = NULL;
-      //FIXME: totalFreeSpace = 0; // this line is not required
+      totalFreeSpace = 0;
     }
     ptr = ptr->next;
   }
-
+  // if the free area is less than the deallocation lot size or no free area exists, return
   if (free_area_start == NULL || totalFreeSpace < (size_t)MEM_DEALLOC_LOT_SIZE)
   {
     return;
@@ -122,6 +207,7 @@ void release_memory_if_required()
   {
     reset = mem_pool;
     mem_pool = NULL;
+    last_allocated = NULL;
   }
   else
   {
@@ -144,19 +230,14 @@ void release_memory_if_required()
  */
 meta_data allocate_mem(meta_data prev, size_t size)
 {
-  void *start_meta_data = sbrk(0); // get current break address
-  if (start_meta_data == (void *)-1)
+
+  void *memory = sbrk(size); // increment break address by size
+  if (memory == (void *)-1)
   {
     return NULL;
   }
 
-  void *end_address = sbrk(size + META_DATA_SIZE); // increment break address by size
-  if (end_address == (void *)-1)
-  {
-    return NULL;
-  }
-
-  meta_data block = start_meta_data;
+  meta_data block = memory;
   block->size = size;
   block->next = NULL;
   block->prev = prev;
@@ -168,7 +249,8 @@ meta_data allocate_mem(meta_data prev, size_t size)
   if (prev)
   {
     prev->next = block;
-  }
+  } 
+
   return block;
 }
 
@@ -188,12 +270,13 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t msize = size + META_DATA_SIZE;
+  size_t s = ALING(size, 2);
+  size_t msize = s + META_DATA_SIZE;
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, msize);
 
-  if (size == 0) // special case, check man page.
+  if (size == 0)
     return mem;
 
   if (mem == NULL) // if no free memory available in memory-pool
@@ -207,17 +290,14 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
     }
 
     add_mem_to_pool(mem); // add the memory to memory-pool
-  } else {
+  }
+  else
+  {
     if (mem->size > msize)
     {
       split_block(mem, msize);
     }
   }
-
-  // maybe user wants 20 bytes data but
-  // we may created/have big chunk of memory
-  // So, we'll resize the memory.
-
 
   mem->free = 0;
   return WRITABLE_AREA(mem);
@@ -227,7 +307,7 @@ int is_valid_addr(void *p)
 {
   if (mem_pool)
   {
-    if (p > (void*) mem_pool && p < sbrk(0))
+    if (p > (void *)mem_pool && p < sbrk(0))
     {
       void *ptr = HEADER_AREA(p)->ptr;
       int res = ptr == p;
@@ -263,7 +343,7 @@ void custom_free(void *ptr)
   release_memory_if_required();
 }
 
-void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size))
+void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev,size_t size))
 {
   if (!ptr)
   {
@@ -289,7 +369,7 @@ void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data
   return new_ptr;
 }
 
-void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size))
+void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev,size_t size))
 {
   size_t size = nelem * elsize;
   void *ptr = custom_malloc(size, find_free_block);

@@ -1,10 +1,10 @@
 #ifndef CUSTOM_ALLOC_H
 #define CUSTOM_ALLOC_H
-#define _BSD_SOURCE
 #include <unistd.h>
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include <math.h>
  /**
      * Aligns the given size to the nearest multiple of 4.
      *
@@ -29,8 +29,8 @@ typedef struct meta_data *meta_data;
 struct meta_data
 {
     size_t size;               // Block size
-    meta_data next;    // Next free block
-    meta_data prev;    // Previous free block (optional)
+    meta_data next;    // Next block
+    meta_data prev;    // Previous block (optional)
     void* ptr;          // Pointer to the memory block
     unsigned int free;     // 1-bit for free status
     
@@ -41,18 +41,21 @@ struct meta_data
 #define WRITABLE_AREA(p) (((meta_data )p) + 1)
 #define HEADER_AREA(p) (((meta_data )p) - 1)
 #define MAX(X, Y) (((size_t)(X) > (size_t)(Y)) ? (size_t)(X) : (size_t)(Y))
+#define ALING(x, a) (((x) + (a - 1)) & ~(a - 1))
 
 meta_data mem_pool = NULL;
+meta_data last_allocated = NULL;
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);
 
-void *custom_malloc(size_t size, meta_data find_free_block(meta_data *prev, size_t size));
+void *custom_malloc(size_t size, meta_data find_free_block(meta_data* prev,size_t size));
 void custom_free(void *ptr);
-void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size));
-void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size));
+void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data* prev,size_t size));
+void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data* prev,size_t size));
 
 int is_valid_addr(void *p);
+
 
 
 #endif // !CUSTOM_ALLOC_H
