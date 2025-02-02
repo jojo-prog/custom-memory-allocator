@@ -277,8 +277,9 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t msize = size + META_DATA_SIZE;
-  msize = ALING(msize, 2);
+  size_t s = ALING(size, 2);
+
+  size_t msize = s + META_DATA_SIZE;
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, msize);

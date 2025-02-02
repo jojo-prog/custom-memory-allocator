@@ -1,0 +1,6 @@
+-   for best fit, first fit, next fit and standard malloc
+    -   one graph for average heap size
+    -   one graph for average allocation time
+
+- make sure the axis have the right scale to extract more information
+- analyse the change of the graph, like huge jumps etc.

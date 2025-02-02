@@ -160,7 +160,7 @@ int main(void)
 {
 
     // test_next_fit();
-    run_test("next_fit.txt", &next_fit);
+    run_test("first_fit.txt", &first_fit);
     
 
     return 0;
