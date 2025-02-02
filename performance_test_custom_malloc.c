@@ -2,15 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
+#include <assert.h>
 #define MAX_ALLOCATIONS 10000
 #define MAX_SIZE 4096 // Maximum size for an allocation (in bytes)
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 
-
-
-size_t get_heap_size() {
+size_t get_heap_size()
+{
     // Use sbrk(0) to get the current program break
     void *current_break = sbrk(0);
 
@@ -18,7 +17,8 @@ size_t get_heap_size() {
     static void *heap_base = NULL;
 
     // Initialize the heap base if this is the first call
-    if (heap_base == NULL) {
+    if (heap_base == NULL)
+    {
         heap_base = current_break;
     }
 
@@ -26,117 +26,122 @@ size_t get_heap_size() {
     return (size_t)((char *)current_break - (char *)heap_base);
 }
 
-
-unsigned long* test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data *prev,size_t size)) {
-    void* pointers[max_allocations];
+unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data *prev, size_t size))
+{
+    void *pointers[max_allocations];
     size_t heap_sizes[max_allocations];
     unsigned long allocation_duration[max_allocations];
     int allocated_count = 0;
 
     srand(time(NULL)); // Seed for random number generation
     unsigned long start_time = clock();
-    for (int i = 0; i < max_allocations; i++) {
+    for (int i = 0; i < max_allocations; i++)
+    {
         int action = rand() % 100; // Generate a random number between 0 and 99
 
-        if (action < ALLOC_PROB && allocated_count < max_allocations) {
+        if (action < ALLOC_PROB && allocated_count < max_allocations)
+        {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             size_t size = (rand() % MAX_SIZE) + 1;
             pointers[allocated_count] = custom_malloc(size, find_free_block);
-            //pointers[allocated_count] = malloc(size);
-    
+            // pointers[allocated_count] = malloc(size);
 
-            if (pointers[allocated_count] == NULL) {
+            if (pointers[allocated_count] == NULL)
+            {
                 perror("malloc failed");
                 exit(EXIT_FAILURE);
             }
 
-            //printf("Allocated %zu bytes at index %d\n", size, allocated_count);
+            // printf("Allocated %zu bytes at index %d\n", size, allocated_count);
             allocated_count++;
-        } else if (action < ALLOC_PROB + FREE_PROB && allocated_count > 0) {
+        }
+        else if (action < ALLOC_PROB + FREE_PROB && allocated_count > 0)
+        {
             // Free a random pointer
             int free_index = rand() % allocated_count;
 
-            if (pointers[free_index] != NULL) {
-               
-            
+            if (pointers[free_index] != NULL)
+            {
+
                 custom_free(pointers[free_index]);
-                //free(pointers[free_index]);
-                
-                //printf("Freed memory at index %d\n", free_index);
+                // free(pointers[free_index]);
+
+                // printf("Freed memory at index %d\n", free_index);
                 pointers[free_index] = NULL;
             }
         }
         unsigned long end_time = clock();
         allocation_duration[i] = end_time - start_time;
         heap_sizes[i] = get_heap_size();
-
     }
-    
 
     // Free any remaining allocated memory
-    for (int i = 0; i < allocated_count; i++) {
-        if (pointers[i] != NULL) {
+    for (int i = 0; i < allocated_count; i++)
+    {
+        if (pointers[i] != NULL)
+        {
             custom_free(pointers[i]);
-            //free(pointers[i]);
-            //printf("Freed remaining memory at index %d\n", i);
+            // free(pointers[i]);
+            // printf("Freed remaining memory at index %d\n", i);
             pointers[i] = NULL;
         }
     }
 
     // compute avarage allocation duration
     long total_duration = 0;
-    for (int i = 0; i < max_allocations; i++) {
+    for (int i = 0; i < max_allocations; i++)
+    {
         total_duration += allocation_duration[i];
     }
     long average_duration = total_duration / max_allocations;
 
     // compute avarage heap size
     size_t total_heap_size = 0;
-    for (int i = 0; i < max_allocations; i++) {
+    for (int i = 0; i < max_allocations; i++)
+    {
         total_heap_size += heap_sizes[i];
     }
     size_t average_heap_size = total_heap_size / max_allocations;
 
-    //printf("All memory has been freed.\n");
-    unsigned long* result = (unsigned long*)malloc(2 * sizeof(unsigned long));
+    // printf("All memory has been freed.\n");
+    unsigned long *result = (unsigned long *)malloc(2 * sizeof(unsigned long));
     result[0] = average_duration;
     result[1] = average_heap_size;
     return result;
 }
 
-char* to_string(unsigned long* result) {
-    char* str = (char*)malloc(100 * sizeof(char));
+char *to_string(unsigned long *result)
+{
+    char *str = (char *)malloc(100 * sizeof(char));
     sprintf(str, "%lu %lu\n", result[0], result[1]);
     return str;
 }
 
-void run_test(char* filename, meta_data (*find_free_block)(meta_data*,size_t))
+void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
 {
     FILE *fp = fopen(filename, "w");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         perror("fopen failed");
         exit(EXIT_FAILURE);
     }
 
     for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
-        unsigned long* result = test_malloc(i, find_free_block);
-        char* str1 = to_string(result);
-        //char* str2 = to_string(result2);
+        unsigned long *result = test_malloc(i, find_free_block);
+        char *str1 = to_string(result);
+        // char* str2 = to_string(result2);
 
-        fwrite(str1, strlen(str1),1, fp);
+        fwrite(str1, strlen(str1), 1, fp);
 
-        
-        //write(fp, result2, sizeof(unsigned long) * 2);
-        //write(fp, result3, sizeof(unsigned long) * 2);
+        // write(fp, result2, sizeof(unsigned long) * 2);
+        // write(fp, result3, sizeof(unsigned long) * 2);
 
+        printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
+        // printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
 
-        printf("%d Average allocation duration: %lu, Average heap size: %lu\n",i ,result[0], result[1]);
-        //printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
-    
-
-        //free(result1);
-        //free(result2);
+        // free(result1);
+        // free(result2);
         free(result);
     }
 
@@ -145,18 +150,18 @@ void run_test(char* filename, meta_data (*find_free_block)(meta_data*,size_t))
 
 void test_next_fit()
 {
-    void* mem = custom_malloc(100, next_fit);
-    void* mem2 = custom_malloc(200, next_fit);
+    void *mem = custom_malloc(100, next_fit);
+    void *mem2 = custom_malloc(200, next_fit);
     custom_free(mem);
     custom_free(mem2);
 }
 
-int main(void) {
-    
-   //test_next_fit();
-   run_test("best_fit.txt", &best_fit);
-   
+int main(void)
+{
 
+    // test_next_fit();
+    run_test("next_fit.txt", &next_fit);
+    
 
     return 0;
 }

@@ -33,15 +33,18 @@ meta_data next_fit(meta_data *prev, size_t size)
   }
 
   meta_data current = last_allocated;
-  while (current)
+  if (mem_pool != last_allocated)
   {
-    if (is_valid_addr(current) && current->free && current->size >= size)
+    while (current)
     {
-      *prev = current->prev;
-      last_allocated = current;
-      return current;
+      if (is_valid_addr(current) && current->free && current->size >= size)
+      {
+        *prev = current->prev;
+        last_allocated = current;
+        return current;
+      }
+      current = current->next;
     }
-    current = current->next;
   }
 
   current = mem_pool;
@@ -59,7 +62,6 @@ meta_data next_fit(meta_data *prev, size_t size)
 
   return NULL;
 }
-
 meta_data first_fit(meta_data *prev, size_t size)
 {
   // implement first fit algorithm
@@ -211,8 +213,13 @@ void release_memory_if_required()
   }
   else
   {
+
+    // TODO: case when the free area is not at the start of the memory pool
+    // TODO: case when the free area is not at the start of the memory pool and behind the last free block is a used block
+
     reset = free_area_start;
     free_area_start->prev->next = NULL;
+    
   }
   brk(reset);
 }
@@ -249,7 +256,7 @@ meta_data allocate_mem(meta_data prev, size_t size)
   if (prev)
   {
     prev->next = block;
-  } 
+  }
 
   return block;
 }
@@ -270,8 +277,8 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t s = ALING(size, 2);
-  size_t msize = s + META_DATA_SIZE;
+  size_t msize = size + META_DATA_SIZE;
+  msize = ALING(msize, 2);
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, msize);
@@ -282,7 +289,9 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
   if (mem == NULL) // if no free memory available in memory-pool
   {
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
-    size_t allocate_size = MAX(((msize / PAGE_SIZE) + 1) * PAGE_SIZE, MEM_ALLOC_LOT_SIZE);
+    size_t x = (msize / PAGE_SIZE) + 1;
+    size_t prealloc_size = x * PAGE_SIZE; // makes shure that the size is multiple of PAGE_SIZE and not less than page size
+    size_t allocate_size = MAX( prealloc_size, MEM_ALLOC_LOT_SIZE);
 
     if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {
@@ -343,7 +352,7 @@ void custom_free(void *ptr)
   release_memory_if_required();
 }
 
-void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev,size_t size))
+void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size))
 {
   if (!ptr)
   {
@@ -369,7 +378,7 @@ void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data
   return new_ptr;
 }
 
-void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev,size_t size))
+void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size))
 {
   size_t size = nelem * elsize;
   void *ptr = custom_malloc(size, find_free_block);

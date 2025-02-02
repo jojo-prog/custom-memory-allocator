@@ -5,16 +5,11 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
- /**
-     * Aligns the given size to the nearest multiple of 4.
-     *
-     * @param size The size to be aligned.
-     * @return The size aligned to the nearest multiple of 4.
- */
+
 
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #define MEM_ALLOC_LOT_SIZE (1 * PAGE_SIZE)
-#define MEM_DEALLOC_LOT_SIZE (2 * PAGE_SIZE)
+#define MEM_DEALLOC_LOT_SIZE (2 * PAGE_SIZE) // TODO: why ??????
 typedef struct meta_data *meta_data;
 
 
