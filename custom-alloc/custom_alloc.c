@@ -6,18 +6,14 @@ meta_data best_fit(meta_data *prev, size_t size)
   if (mem_pool == NULL)
   {
     return NULL;
-  } 
+  }
 
   meta_data current = mem_pool;
   meta_data best_fit_ptr = NULL;
-  size_t min_size = mem_pool->size;
+  size_t min_size = -1;
 
   while (current)
   {
-    if((long)current->size < 0)
-    {
-      return NULL;
-    }
 
     if (current->free && current->size >= size && current->size < min_size)
     {
@@ -85,7 +81,6 @@ meta_data first_fit(meta_data *prev, size_t size)
     }
     current = current->next;
   }
-  
 
   return current;
 }
@@ -105,7 +100,14 @@ void add_mem_to_pool(meta_data mem)
     mem_pool = mem;
     mem_pool->next = NULL;
     mem_pool->prev = NULL;
-    return;
+  } else {
+    meta_data current = mem_pool;
+    while (current->next)
+    {
+      current = current->next;
+    }
+    current->next = mem;
+    mem->prev = current;
   }
 }
 
@@ -122,8 +124,9 @@ void add_mem_to_pool(meta_data mem)
 void split_block(meta_data block, size_t size)
 {
   // Calculate the address of the new block
-
-  if (block->size - (size + META_DATA_SIZE) < META_DATA_SIZE)
+  size_t x = block->size - (size + META_DATA_SIZE) < META_DATA_SIZE;
+  long y = (long)(block->size - size - META_DATA_SIZE);
+  if (x)
   {
     return;
   }
@@ -136,10 +139,6 @@ void split_block(meta_data block, size_t size)
   // Initialize the new block
   meta_data new_block = (meta_data)new_block_address;
   new_block->size = block->size - size - META_DATA_SIZE;
-  if (new_block->size > 4096)
-  {
-    return;
-  }
   new_block->free = 1; // Mark as free
   new_block->next = block->next;
   new_block->prev = block;
@@ -154,6 +153,7 @@ void split_block(meta_data block, size_t size)
   {
     new_block->next->prev = new_block;
   }
+  splits_count++;
 }
 
 /**
@@ -162,35 +162,26 @@ void split_block(meta_data block, size_t size)
  * This function iterates through the memory pool and merges adjacent free
  * memory blocks into a single larger block to reduce fragmentation.
  */
-void merge_free_blocks()
+void merge_blocks()
 {
   meta_data ptr = mem_pool;
-
   if (ptr == NULL)
   {
     return;
   }
-  meta_data s = (meta_data)sbrk(0);
-  if (ptr > s)
-  {
-    return;
-  }
-
-  
-
   while (ptr && ptr->next)
   {
-    if (ptr->free == 1 && ptr->next->free == 1)
+    if (ptr->free && ptr->next->free)
     {
       ptr->size += ptr->next->size + META_DATA_SIZE;
       ptr->next = ptr->next->next;
-      if (ptr->next != NULL)
+      if (ptr->next)
+      {
         ptr->next->prev = ptr;
+      }
+      merges_count++;
     }
-    else
-    {
-      ptr = ptr->next;
-    }
+    ptr = ptr->next;
   }
 }
 
@@ -244,8 +235,8 @@ void release_memory_if_required()
 
     reset = free_area_start;
     free_area_start->prev->next = NULL;
-    
   }
+  frees_count++;
   brk(reset);
 }
 
@@ -302,8 +293,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t s = (long) pow(2, ceil(log2(size)));
-
+  size_t s = ALING(size, 4); // align the size to 4 bytes
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, s);
@@ -316,7 +306,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes shure that the size is multiple of PAGE_SIZE and not less than page size
-    size_t allocate_size = MAX( prealloc_size, MEM_ALLOC_LOT_SIZE);
+    size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_LOT_SIZE);
 
     if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {
@@ -325,11 +315,8 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 
     add_mem_to_pool(mem); // add the memory to memory-pool
   }
-  
-    
-    split_block(mem, s);
-    
-  
+
+  split_block(mem, s);
 
   mem->free = 0;
   return WRITABLE_AREA(mem);
@@ -367,12 +354,10 @@ void custom_free(void *ptr)
   meta_data block = HEADER_AREA(ptr);
   block->free = 1;
 
-  // after free, merge the small free chunks, so that
-  merge_free_blocks();
+  merge_blocks(block);
 
-  // if a big chunk of data is unused,
-  // then back the memory to system.
   release_memory_if_required();
+
 }
 
 void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size))

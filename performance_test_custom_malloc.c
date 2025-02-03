@@ -33,18 +33,29 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     unsigned long allocation_duration[max_allocations];
     int allocated_count = 0;
 
-    srand(time(NULL)); // Seed for random number generation
+    srand(1000); // Seed for random number generation
     unsigned long start_time = clock();
     for (int i = 0; i < max_allocations; i++)
     {
         int action = rand() % 100; // Generate a random number between 0 and 99
-
+        // clear consol
+        printf("Iteration: %d\n", i);
         if (action < ALLOC_PROB && allocated_count < max_allocations)
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             size_t size = (rand() % MAX_SIZE) + 1;
             pointers[allocated_count] = custom_malloc(size, find_free_block);
             // pointers[allocated_count] = malloc(size);
+
+            meta_data current = mem_pool;
+            printf("After allocation\n");
+            while (current)
+            {
+                printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
+                current = current->next;
+            }
+
+            printf("\n");
 
             if (pointers[allocated_count] == NULL)
             {
@@ -65,6 +76,14 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
 
                 custom_free(pointers[free_index]);
                 // free(pointers[free_index]);
+                meta_data current = mem_pool;
+                printf("After free\n");
+                while (current)
+                {
+
+                    printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
+                    current = current->next;
+                }
 
                 // printf("Freed memory at index %d\n", free_index);
                 pointers[free_index] = NULL;
@@ -85,6 +104,15 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             // printf("Freed remaining memory at index %d\n", i);
             pointers[i] = NULL;
         }
+    }
+
+    printf("All memory has been freed.\n");
+    meta_data current = mem_pool;
+    while (current)
+    {
+
+        printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
+        current = current->next;
     }
 
     // compute avarage allocation duration
@@ -137,7 +165,10 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         // write(fp, result2, sizeof(unsigned long) * 2);
         // write(fp, result3, sizeof(unsigned long) * 2);
 
-        printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
+        printf("%d Average allocation duration: %lu, Average heap size: %lu, Splits: %lu, Frees: %lu\n", i, result[0], result[1], splits_count, frees_count);
+
+        splits_count = 0;
+        frees_count = 0;
         // printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
 
         // free(result1);
@@ -148,35 +179,16 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
     fclose(fp);
 }
 
-void test_next_fit()
-{
-    void *mem = custom_malloc(100, next_fit);
-    void *mem2 = custom_malloc(200, next_fit);
-    custom_free(mem);
-    custom_free(mem2);
-}
-
-void test_best_fit()
-{
-    size_t size = get_heap_size();
-    void *mem = custom_malloc(100, best_fit);
-    size = get_heap_size();
-    void *mem2 = custom_malloc(200, best_fit);
-    size = get_heap_size();
-    custom_free(mem);
-    size = get_heap_size();
-    custom_free(mem2);
-    size = get_heap_size();
-}
-
 int main(void)
 {
 
     // test_next_fit();
-    test_malloc(MAX_ALLOCATIONS, best_fit);
 
-    //test_best_fit(); 
-    
+    unsigned long *result = test_malloc(5000, &best_fit);
+    printf("Average allocation duration: %lu, Average heap size: %lu, Splits: %lu, Frees: %lu, Merges: %lu\n", result[0], result[1], splits_count, frees_count, merges_count);
+    printf("Possible heap shrink: %lu\n", possible_heap_shrink);
+
+    // test_best_fit();
 
     return 0;
 }

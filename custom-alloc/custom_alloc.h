@@ -8,8 +8,8 @@
 
 
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#define MEM_ALLOC_LOT_SIZE (1 * PAGE_SIZE)
-#define MEM_DEALLOC_LOT_SIZE (PAGE_SIZE) // TODO: why ??????
+#define MEM_ALLOC_LOT_SIZE (1* PAGE_SIZE)
+#define MEM_DEALLOC_LOT_SIZE (2 *PAGE_SIZE) // TODO: why ??????
 typedef struct meta_data *meta_data;
 
 
@@ -40,6 +40,11 @@ struct meta_data
 
 meta_data mem_pool = NULL;
 meta_data last_allocated = NULL;
+
+unsigned long splits_count = 0;
+unsigned long frees_count = 0;
+unsigned long merges_count = 0;
+unsigned long possible_heap_shrink = 0;
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);
