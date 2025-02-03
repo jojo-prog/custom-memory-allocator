@@ -3,14 +3,23 @@
 meta_data best_fit(meta_data *prev, size_t size)
 {
   // implement best fit
+  if (mem_pool == NULL)
+  {
+    return NULL;
+  } 
 
   meta_data current = mem_pool;
   meta_data best_fit_ptr = NULL;
-  size_t min_size = -1;
+  size_t min_size = mem_pool->size;
 
   while (current)
   {
-    if (is_valid_addr(current) && current->free && current->size >= size && current->size < min_size)
+    if((long)current->size < 0)
+    {
+      return NULL;
+    }
+
+    if (current->free && current->size >= size && current->size < min_size)
     {
       *prev = current->prev;
       best_fit_ptr = current;
@@ -37,7 +46,7 @@ meta_data next_fit(meta_data *prev, size_t size)
   {
     while (current)
     {
-      if (is_valid_addr(current) && current->free && current->size >= size)
+      if (current->free && current->size >= size)
       {
         *prev = current->prev;
         last_allocated = current;
@@ -67,11 +76,16 @@ meta_data first_fit(meta_data *prev, size_t size)
   // implement first fit algorithm
 
   meta_data current = mem_pool;
-  while (current && !(current->free && current->size >= size))
+  while (current)
   {
-    *prev = current;
+    if (current->free && current->size >= size)
+    {
+      *prev = current->prev;
+      return current;
+    }
     current = current->next;
   }
+  
 
   return current;
 }
@@ -93,14 +107,6 @@ void add_mem_to_pool(meta_data mem)
     mem_pool->prev = NULL;
     return;
   }
-
-  meta_data parent = mem_pool;
-  while (is_valid_addr(parent) && parent->next != NULL)
-    parent = parent->next;
-
-  parent->next = mem;
-  mem->prev = parent;
-  mem->next = NULL;
 }
 
 /**
@@ -116,11 +122,24 @@ void add_mem_to_pool(meta_data mem)
 void split_block(meta_data block, size_t size)
 {
   // Calculate the address of the new block
-  void *new_block_address = (void *)((char *)block + size + META_DATA_SIZE);
 
+  if (block->size - (size + META_DATA_SIZE) < META_DATA_SIZE)
+  {
+    return;
+  }
+
+  void *new_block_address = (void *)((char *)block + size + META_DATA_SIZE);
+  if ((long)(block->size - size - META_DATA_SIZE) < 0)
+  {
+    return;
+  }
   // Initialize the new block
   meta_data new_block = (meta_data)new_block_address;
   new_block->size = block->size - size - META_DATA_SIZE;
+  if (new_block->size > 4096)
+  {
+    return;
+  }
   new_block->free = 1; // Mark as free
   new_block->next = block->next;
   new_block->prev = block;
@@ -151,10 +170,16 @@ void merge_free_blocks()
   {
     return;
   }
+  meta_data s = (meta_data)sbrk(0);
+  if (ptr > s)
+  {
+    return;
+  }
+
+  
 
   while (ptr && ptr->next)
   {
-
     if (ptr->free == 1 && ptr->next->free == 1)
     {
       ptr->size += ptr->next->size + META_DATA_SIZE;
@@ -238,7 +263,7 @@ void release_memory_if_required()
 meta_data allocate_mem(meta_data prev, size_t size)
 {
 
-  void *memory = sbrk(size); // increment break address by size
+  void *memory = sbrk(size + META_DATA_SIZE); // increment break address by size
   if (memory == (void *)-1)
   {
     return NULL;
@@ -277,12 +302,11 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t s = ALING(size, 2);
+  size_t s = (long) pow(2, ceil(log2(size)));
 
-  size_t msize = s + META_DATA_SIZE;
 
   // check memory-pool if any free memory available
-  mem = find_free_block(&prev, msize);
+  mem = find_free_block(&prev, s);
 
   if (size == 0)
     return mem;
@@ -290,7 +314,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
   if (mem == NULL) // if no free memory available in memory-pool
   {
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
-    size_t x = (msize / PAGE_SIZE) + 1;
+    size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes shure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX( prealloc_size, MEM_ALLOC_LOT_SIZE);
 
@@ -301,13 +325,11 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 
     add_mem_to_pool(mem); // add the memory to memory-pool
   }
-  else
-  {
-    if (mem->size > msize)
-    {
-      split_block(mem, msize);
-    }
-  }
+  
+    
+    split_block(mem, s);
+    
+  
 
   mem->free = 0;
   return WRITABLE_AREA(mem);

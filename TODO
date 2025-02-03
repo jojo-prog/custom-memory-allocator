@@ -1,1 +1,2 @@
-- find bug in first fit
+- somewhere is an overflow in allocation
+- block arent allocated in the correct size

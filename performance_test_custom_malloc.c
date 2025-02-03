@@ -156,11 +156,26 @@ void test_next_fit()
     custom_free(mem2);
 }
 
+void test_best_fit()
+{
+    size_t size = get_heap_size();
+    void *mem = custom_malloc(100, best_fit);
+    size = get_heap_size();
+    void *mem2 = custom_malloc(200, best_fit);
+    size = get_heap_size();
+    custom_free(mem);
+    size = get_heap_size();
+    custom_free(mem2);
+    size = get_heap_size();
+}
+
 int main(void)
 {
 
     // test_next_fit();
-    run_test("first_fit.txt", &first_fit);
+    test_malloc(MAX_ALLOCATIONS, best_fit);
+
+    //test_best_fit(); 
     
 
     return 0;

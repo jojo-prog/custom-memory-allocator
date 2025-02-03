@@ -9,7 +9,7 @@
 
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #define MEM_ALLOC_LOT_SIZE (1 * PAGE_SIZE)
-#define MEM_DEALLOC_LOT_SIZE (2 * PAGE_SIZE) // TODO: why ??????
+#define MEM_DEALLOC_LOT_SIZE (PAGE_SIZE) // TODO: why ??????
 typedef struct meta_data *meta_data;
 
 
