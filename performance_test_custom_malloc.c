@@ -58,7 +58,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             size_t size = (rand() % MAX_SIZE) + 1;
-            pointers[allocated_count] = custom_malloc(size, find_free_block);
+            pointers[allocated_count] = find_free_block ? custom_malloc(size, find_free_block) : malloc(size);
             // pointers[allocated_count] = malloc(size);
 
             DEBUG_PRINT;
@@ -80,7 +80,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             if (pointers[free_index] != NULL)
             {
 
-                custom_free(pointers[free_index]);
+                find_free_block ? custom_free(pointers[free_index]) : free(pointers[free_index]);
                 DEBUG_PRINT;
                 // free(pointers[free_index]);
                 pointers[free_index] = NULL;
@@ -97,7 +97,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     {
         if (pointers[i] != NULL)
         {
-            custom_free(pointers[i]);
+             find_free_block ? custom_free(pointers[i]) : free(pointers[i]);
             // free(pointers[i]);
             // printf("Freed remaining memory at index %d\n", i);
             pointers[i] = NULL;
@@ -187,8 +187,14 @@ int main(void)
 {
 
     // test_next_fit();
+    unsigned long* result = test_malloc(10000, &best_fit);
+    printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+    result = test_malloc(10000, &next_fit);
+    printf("Next Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+    result = test_malloc(10000, &first_fit);
+    printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+    result = test_malloc(10000, NULL);
+    printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+    free(result);
     
-    run_test("best_malloc.txt", &best_fit);
-
-    return 0;
 }

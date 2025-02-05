@@ -1,10 +1,10 @@
 #include "custom_alloc.h"
 
-//Searches for the smallest free block that is large enough to satisfy the memory request
-//the idea is to minimize fragmentation by choosing the smallest possible available block
+// Searches for the smallest free block that is large enough to satisfy the memory request
+// the idea is to minimize fragmentation by choosing the smallest possible available block
 meta_data best_fit(meta_data *prev, size_t size)
 {
-  //if no memory has been allocated yet
+  // if no memory has been allocated yet
   if (mem_pool == NULL)
   {
     return NULL;
@@ -12,13 +12,13 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   meta_data current = mem_pool;
   meta_data best_fit_ptr = NULL;
-  //ensures any valid block will be smaller
+  // ensures any valid block will be smaller
   size_t min_size = -1;
 
   while (current)
   {
 
-    //check if the block is free, large enough and smaller than the current
+    // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
       *prev = current->prev;
@@ -36,7 +36,7 @@ meta_data next_fit(meta_data *prev, size_t size)
 
   // TODO: implement next fit algorithm
 
-  //if "last_allocated" is NULL, initialize it to the start of the memory pool 
+  // if "last_allocated" is NULL, initialize it to the start of the memory pool
   if (last_allocated == NULL)
   {
     last_allocated = mem_pool;
@@ -50,7 +50,7 @@ meta_data next_fit(meta_data *prev, size_t size)
       if (current->free && current->size >= size)
       {
         *prev = current->prev;
-        //mark this block as the new starting point for the next allocation
+        // mark this block as the new starting point for the next allocation
         last_allocated = current;
         return current;
       }
@@ -58,9 +58,9 @@ meta_data next_fit(meta_data *prev, size_t size)
     }
   }
 
-  //if the first search did not find a suitable block, search from the beginning
+  // if the first search did not find a suitable block, search from the beginning
   current = mem_pool;
-  //stop if "current" reaches "last_allocated"
+  // stop if "current" reaches "last_allocated"
   while (current && current != last_allocated)
   {
     if (is_valid_addr(current) && current->free && current->size >= size)
@@ -75,13 +75,13 @@ meta_data next_fit(meta_data *prev, size_t size)
   return NULL;
 }
 
-//we traverse the memory pool and allocate the first available block that is large enough to fit the requested size
+// we traverse the memory pool and allocate the first available block that is large enough to fit the requested size
 meta_data first_fit(meta_data *prev, size_t size)
 {
   // implement first fit algorithm
 
   meta_data current = mem_pool;
-  //Loop through the entire linked list until we reach the end (current == NULL)
+  // Loop through the entire linked list until we reach the end (current == NULL)
   while (current)
   {
     if (current->free && current->size >= size)
@@ -105,22 +105,20 @@ meta_data first_fit(meta_data *prev, size_t size)
  */
 void add_mem_to_pool(meta_data mem)
 {
-  //if "mem_pool" is empty, set it as the First Block
+  // if "mem_pool" is empty, set it as the First Block
   if (mem_pool == NULL)
   {
     mem_pool = mem;
     mem_pool->next = NULL;
     mem_pool->prev = NULL;
-  } else {
-    //we traverse to the last block
-    meta_data current = mem_pool;
-    while (current->next)
-    {
-      current = current->next;
-    }
-    //add the new block to the end of the list
-    current->next = mem;
-    mem->prev = current;
+    end_of_pool = mem_pool;
+  }
+  else
+  {
+    // add the new block to the end of the memory pool
+    end_of_pool->next = mem;
+    mem->prev = end_of_pool;
+    end_of_pool = mem;
   }
 }
 
@@ -137,8 +135,7 @@ void add_mem_to_pool(meta_data mem)
 void split_block(meta_data block, size_t size)
 {
 
-
-  //compute the address of the new block
+  // compute the address of the new block
   void *new_block_address = (void *)((char *)block + size + META_DATA_SIZE);
   if ((long)(block->size - size - META_DATA_SIZE) < 0)
   {
@@ -161,7 +158,7 @@ void split_block(meta_data block, size_t size)
   {
     new_block->next->prev = new_block;
   }
-  splits_count++; //useful for performance analysis
+  splits_count++; // useful for performance analysis
 }
 
 /**
@@ -170,39 +167,31 @@ void split_block(meta_data block, size_t size)
  * This function iterates through the memory pool and merges adjacent free
  * memory blocks into a single larger block to reduce fragmentation.
  */
-void merge_blocks()
+void merge_blocks(meta_data ptr)
 {
-  meta_data ptr = mem_pool;
-  if (ptr == NULL)
+
+  // If both the current block and the next block are free, they can be merged
+  if (ptr->next && ptr->next->free)
   {
-    return;
-  }
-  //traverse the Linked List
-  while (ptr)
-  {
-    //If both the current block and the next block are free, they can be merged
-    if (ptr && ptr->free && ptr->next && ptr->next->free)
+    ptr->size += ptr->next->size + META_DATA_SIZE;
+    ptr->next = ptr->next->next;
+    if (ptr->next)
     {
-      ptr->size += ptr->next->size + META_DATA_SIZE;
-      ptr->next = ptr->next->next;
-      if (ptr->next)
-      {
-        ptr->next->prev = ptr;
-      }
-      merges_count++;
+      ptr->next->prev = ptr;
     }
-    if(ptr && ptr->free && ptr->prev && ptr->prev->free){
-      ptr->prev->size += ptr->size + META_DATA_SIZE;
-      ptr->prev->next = ptr->next;
+    merges_count++;
+  }
+  if (ptr->prev && ptr->prev->free)
+  {
+    ptr->prev->size += ptr->size + META_DATA_SIZE;
+    ptr->prev->next = ptr->next;
 
-      if (ptr->next)
-      {
-        ptr->next->prev = ptr;
-      }
-
-      merges_count++;
+    if (ptr->next)
+    {
+      ptr->next->prev = ptr->prev;
     }
-    ptr = ptr->next;
+
+    merges_count++;
   }
 }
 
@@ -381,6 +370,19 @@ void custom_free(void *ptr)
   merge_blocks(block);
 
   release_memory_if_required();
+
+  if (mem_pool != NULL)
+  {
+    if (mem_pool->free)
+    {
+      if (mem_pool->next == NULL)
+      {
+        brk(mem_pool);
+        mem_pool = NULL;
+        last_allocated = NULL;
+      }
+    }
+  }
 
 }
 

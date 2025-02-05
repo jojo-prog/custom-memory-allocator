@@ -8,7 +8,7 @@
 
 
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#define MEM_ALLOC_SIZE (2* PAGE_SIZE)
+#define MEM_ALLOC_SIZE (1* PAGE_SIZE)
 #define MEM_DEALLOC_SIZE (2 *PAGE_SIZE) // TODO: why ??????
 typedef struct meta_data *meta_data;
 
@@ -40,6 +40,7 @@ struct meta_data
 #define ALING(x, a) (((x) + (a - 1)) & ~(a - 1))
 
 meta_data mem_pool = NULL;
+meta_data end_of_pool = NULL;
 meta_data last_allocated = NULL;
 
 unsigned long splits_count = 0;
