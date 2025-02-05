@@ -124,12 +124,6 @@ void add_mem_to_pool(meta_data mem)
 void split_block(meta_data block, size_t size)
 {
   // Calculate the address of the new block
-  size_t x = block->size - (size + META_DATA_SIZE) < META_DATA_SIZE;
-  long y = (long)(block->size - size - META_DATA_SIZE);
-  if (x)
-  {
-    return;
-  }
 
   void *new_block_address = (void *)((char *)block + size + META_DATA_SIZE);
   if ((long)(block->size - size - META_DATA_SIZE) < 0)
@@ -169,9 +163,9 @@ void merge_blocks()
   {
     return;
   }
-  while (ptr && ptr->next)
+  while (ptr)
   {
-    if (ptr->free && ptr->next->free)
+    if (ptr && ptr->free && ptr->next && ptr->next->free)
     {
       ptr->size += ptr->next->size + META_DATA_SIZE;
       ptr->next = ptr->next->next;
@@ -179,6 +173,17 @@ void merge_blocks()
       {
         ptr->next->prev = ptr;
       }
+      merges_count++;
+    }
+    if(ptr && ptr->free && ptr->prev && ptr->prev->free){
+      ptr->prev->size += ptr->size + META_DATA_SIZE;
+      ptr->prev->next = ptr->next;
+
+      if (ptr->next)
+      {
+        ptr->next->prev = ptr;
+      }
+
       merges_count++;
     }
     ptr = ptr->next;
@@ -204,7 +209,7 @@ void release_memory_if_required()
     if (ptr->free)
     {
       free_area_start = ptr;
-      totalFreeSpace += ptr->size;
+      totalFreeSpace += ptr->size + META_DATA_SIZE;
     }
     else
     {
@@ -214,7 +219,7 @@ void release_memory_if_required()
     ptr = ptr->next;
   }
   // if the free area is less than the deallocation lot size or no free area exists, return
-  if (free_area_start == NULL || totalFreeSpace < (size_t)MEM_DEALLOC_LOT_SIZE)
+  if (free_area_start == NULL || totalFreeSpace < (size_t)MEM_DEALLOC_SIZE)
   {
     return;
   }
@@ -234,7 +239,10 @@ void release_memory_if_required()
     // TODO: case when the free area is not at the start of the memory pool and behind the last free block is a used block
 
     reset = free_area_start;
-    free_area_start->prev->next = NULL;
+    if (free_area_start->prev)
+    {
+      free_area_start->prev->next = NULL;
+    }
   }
   frees_count++;
   brk(reset);
@@ -306,7 +314,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes shure that the size is multiple of PAGE_SIZE and not less than page size
-    size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_LOT_SIZE);
+    size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
 
     if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {

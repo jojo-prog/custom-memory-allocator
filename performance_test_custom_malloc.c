@@ -7,6 +7,21 @@
 #define MAX_SIZE 4096 // Maximum size for an allocation (in bytes)
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
+#define DEBUG 0
+void print_memory_pool()
+{
+    meta_data current = mem_pool;
+    while (current)
+    {
+        printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
+        current = current->next;
+    }
+    printf("\n");
+}
+
+#define DEBUG_PRINT \
+    if (DEBUG)      \
+    print_memory_pool()
 
 size_t get_heap_size()
 {
@@ -39,7 +54,6 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     {
         int action = rand() % 100; // Generate a random number between 0 and 99
         // clear consol
-        printf("Iteration: %d\n", i);
         if (action < ALLOC_PROB && allocated_count < max_allocations)
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
@@ -47,15 +61,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             pointers[allocated_count] = custom_malloc(size, find_free_block);
             // pointers[allocated_count] = malloc(size);
 
-            meta_data current = mem_pool;
-            printf("After allocation\n");
-            while (current)
-            {
-                printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
-                current = current->next;
-            }
-
-            printf("\n");
+            DEBUG_PRINT;
 
             if (pointers[allocated_count] == NULL)
             {
@@ -75,17 +81,8 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             {
 
                 custom_free(pointers[free_index]);
+                DEBUG_PRINT;
                 // free(pointers[free_index]);
-                meta_data current = mem_pool;
-                printf("After free\n");
-                while (current)
-                {
-
-                    printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
-                    current = current->next;
-                }
-
-                // printf("Freed memory at index %d\n", free_index);
                 pointers[free_index] = NULL;
             }
         }
@@ -95,7 +92,8 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     }
 
     // Free any remaining allocated memory
-    for (int i = 0; i < allocated_count; i++)
+    int i;
+    for (i = 0; i < allocated_count - 1; i++)
     {
         if (pointers[i] != NULL)
         {
@@ -106,14 +104,14 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
         }
     }
 
-    printf("All memory has been freed.\n");
-    meta_data current = mem_pool;
-    while (current)
+    if (pointers[i] != NULL)
     {
-
-        printf("Block size: %zu, Block free: %d, Next: %p, Prev: %p\n", current->size, current->free, current->next, current->prev);
-        current = current->next;
+        custom_free(pointers[i]);
+        // free(pointers[i]);
+        // printf("Freed remaining memory at index %d\n", i);
+        pointers[i] = NULL;
     }
+    DEBUG_PRINT;
 
     // compute avarage allocation duration
     long total_duration = 0;
@@ -154,18 +152,22 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         exit(EXIT_FAILURE);
     }
 
+    unsigned long results[MAX_ALLOCATIONS*2];
+
     for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
         unsigned long *result = test_malloc(i, find_free_block);
-        char *str1 = to_string(result);
+        //char *str1 = to_string(result);
+        results[i] = result[0];
+        results[i+1] = result[1];
         // char* str2 = to_string(result2);
 
-        fwrite(str1, strlen(str1), 1, fp);
+        //fwrite(str1, strlen(str1), 1, fp);
 
         // write(fp, result2, sizeof(unsigned long) * 2);
         // write(fp, result3, sizeof(unsigned long) * 2);
 
-        printf("%d Average allocation duration: %lu, Average heap size: %lu, Splits: %lu, Frees: %lu\n", i, result[0], result[1], splits_count, frees_count);
+        printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
 
         splits_count = 0;
         frees_count = 0;
@@ -176,6 +178,8 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         free(result);
     }
 
+    fwrite(results, sizeof(unsigned long) * 2, MAX_ALLOCATIONS, fp);
+
     fclose(fp);
 }
 
@@ -183,12 +187,8 @@ int main(void)
 {
 
     // test_next_fit();
-
-    unsigned long *result = test_malloc(5000, &best_fit);
-    printf("Average allocation duration: %lu, Average heap size: %lu, Splits: %lu, Frees: %lu, Merges: %lu\n", result[0], result[1], splits_count, frees_count, merges_count);
-    printf("Possible heap shrink: %lu\n", possible_heap_shrink);
-
-    // test_best_fit();
+    
+    run_test("best_malloc.txt", &best_fit);
 
     return 0;
 }
