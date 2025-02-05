@@ -136,7 +136,6 @@ void add_mem_to_pool(meta_data mem)
  */
 void split_block(meta_data block, size_t size)
 {
-  // Calculate the address of the new block
 
 
   //compute the address of the new block
