@@ -26,6 +26,7 @@ struct meta_data
     size_t size;               // Block size
     meta_data next;    // Next block
     meta_data prev;    // Previous block (optional)
+    meta_data next_free; // Next free block
     void* ptr;          // Pointer to the memory block
     unsigned int free;     // 1-bit for free status
     
