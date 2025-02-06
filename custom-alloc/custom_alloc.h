@@ -23,11 +23,12 @@ typedef struct meta_data *meta_data;
  */
 struct meta_data
 {
+    void* ptr;          // Pointer to the memory block
+    unsigned int free;     // 1-bit for free status
     size_t size;               // Block size
     meta_data next;    // Next block
     meta_data prev;    // Previous block (optional)
-    void* ptr;          // Pointer to the memory block
-    unsigned int free;     // 1-bit for free status
+    
 };
 
 
