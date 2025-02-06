@@ -8,8 +8,8 @@
 
 
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#define MEM_ALLOC_LOT_SIZE (1* PAGE_SIZE)
-#define MEM_DEALLOC_LOT_SIZE (2 *PAGE_SIZE) // TODO: why??--> Maybe to reduce fragmentation by freeing large chunks?
+#define MEM_ALLOC_SIZE (1* PAGE_SIZE)
+#define MEM_DEALLOC_SIZE (2 *PAGE_SIZE) // TODO: why??--> Maybe to reduce fragmentation by freeing large chunks?
 typedef struct meta_data *meta_data;
 
 
@@ -26,10 +26,8 @@ struct meta_data
     size_t size;               // Block size
     meta_data next;    // Next block
     meta_data prev;    // Previous block (optional)
-    meta_data next_free; // Next free block
     void* ptr;          // Pointer to the memory block
     unsigned int free;     // 1-bit for free status
-    
 };
 
 
@@ -41,6 +39,7 @@ struct meta_data
 
 meta_data mem_pool = NULL;
 meta_data last_allocated = NULL;
+meta_data end_of_pool = NULL;
 
 unsigned long splits_count = 0;
 unsigned long frees_count = 0;

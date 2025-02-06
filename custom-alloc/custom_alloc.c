@@ -149,6 +149,7 @@ void split_block(meta_data block, size_t size)
   new_block->prev = block;
   new_block->ptr = (void *)(new_block + 1);
 
+
   // Update the original block
   block->size = size;
   block->next = new_block;
@@ -377,7 +378,8 @@ void custom_free(void *ptr)
     return;
 
   meta_data block = HEADER_AREA(ptr); //retrieves the metadata block for "ptr"
-  block->free = 1; //marks the memory block as available 
+  block->free = 1; //marks the memory block as available
+ 
 
   merge_blocks(block); //merge adjacent free blocks
 
