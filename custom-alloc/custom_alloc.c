@@ -170,7 +170,7 @@ void split_block(meta_data block, size_t size)
 void merge_blocks(meta_data ptr)
 {
 
-  // If both the current block and the next block are free, they can be merged
+  // If "ptr->next" exists and is free, merge it forward
   if (ptr->next && ptr->next->free)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
@@ -181,6 +181,7 @@ void merge_blocks(meta_data ptr)
     }
     merges_count++;
   }
+  // If "ptr->prev" exists and is free, merge it backward
   if (ptr->prev && ptr->prev->free)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
@@ -191,7 +192,7 @@ void merge_blocks(meta_data ptr)
       ptr->next->prev = ptr->prev;
     }
 
-    merges_count++;
+    merges_count++; // useful for performance analysis
   }
 }
 
@@ -267,20 +268,24 @@ void release_memory_if_required()
 meta_data allocate_mem(meta_data prev, size_t size)
 {
 
-  void *memory = sbrk(size + META_DATA_SIZE); // increment break address by size
+  void *memory = sbrk(size + META_DATA_SIZE); // Expands the heap space by "size + META_DATA_SIZE" bytes
+  //if sbrk() fails
   if (memory == (void *)-1)
   {
     return NULL;
   }
 
-  meta_data block = memory;
-  block->size = size;
-  block->next = NULL;
-  block->prev = prev;
+  meta_data block = memory; //first part of the allocated memory is used for metadata
+  block->size = size; //set block size
+  block->next = NULL; //no next block yet
+  block->prev = prev; //set previous block if exists
+
   if (block)
   {
+    //mark as allocated
     block->free = 0;
   }
+  //set the pointer to the usable memory area
   block->ptr = block + 1;
   if (prev)
   {
@@ -306,7 +311,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t s = ALING(size, 4); // align the size to 4 bytes
+  size_t s = ALING(size, 4); // align the size to 4 bytes for better memory access efficiency
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, s);
@@ -318,9 +323,10 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
   {
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
     size_t x = (s / PAGE_SIZE) + 1;
-    size_t prealloc_size = x * PAGE_SIZE; // makes shure that the size is multiple of PAGE_SIZE and not less than page size
+    size_t prealloc_size = x * PAGE_SIZE; // makes sure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
 
+    //"allocate_mem()" to request memory from the OS
     if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {
       return NULL;
@@ -329,18 +335,23 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
     add_mem_to_pool(mem); // add the memory to memory-pool
   }
 
+  //if the block is larger than the requested size, split it
   split_block(mem, s);
 
+  //marks the block as allocated
   mem->free = 0;
   return WRITABLE_AREA(mem);
 }
 
+//This function checks if a given pointer p is a valid memory address allocated by our custom memory allocator
 int is_valid_addr(void *p)
 {
   if (mem_pool)
   {
+    //ensures our pointer is within "mem_pool", which is the start of our managed heap and "sbrk(0)", which is the current program break (end of allocated heap)
     if (p > (void *)mem_pool && p < sbrk(0))
     {
+      //validate the adress
       void *ptr = HEADER_AREA(p)->ptr;
       int res = ptr == p;
       return res;
@@ -361,33 +372,37 @@ void custom_free(void *ptr)
 {
   if (ptr == NULL)
     return;
+  //check if the pointer is valid
   if (!is_valid_addr(ptr))
     return;
 
-  meta_data block = HEADER_AREA(ptr);
-  block->free = 1;
+  meta_data block = HEADER_AREA(ptr); //retrieves the metadata block for "ptr"
+  block->free = 1; //marks the memory block as available 
 
-  merge_blocks(block);
+  merge_blocks(block); //merge adjacent free blocks
 
   release_memory_if_required();
 
-  if (mem_pool != NULL)
+  //Free the entire Heap if no memory is allocated
+  if (mem_pool != NULL) //if first block is free
   {
     if (mem_pool->free)
     {
       if (mem_pool->next == NULL)
       {
-        brk(mem_pool);
+        brk(mem_pool); //release the entire heap back to the OS
         mem_pool = NULL;
-        last_allocated = NULL;
+        last_allocated = NULL; //no memory is allocated
       }
     }
   }
 
 }
 
+//This function resizes a previously allocated memory block. If necessary, it moves the block to a new location
 void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data *prev, size_t size))
 {
+  //If "ptr" is NULL, realloc() behaves like malloc(size)
   if (!ptr)
   {
     return custom_malloc(size, find_free_block);
@@ -396,26 +411,32 @@ void *custom_realloc(void *ptr, size_t size, meta_data find_free_block(meta_data
   {
     return NULL;
   }
+  //If the existing block is large enough, return the same block
   meta_data block = HEADER_AREA(ptr);
   if (block->size >= size)
   {
     return ptr;
   }
   void *new_ptr;
+  //If the block is too small, allocate a new one with the requested size
   new_ptr = custom_malloc(size, find_free_block);
   if (!new_ptr)
   {
     return NULL;
   }
-  memcpy(new_ptr, ptr, block->size);
-  custom_free(ptr);
+  memcpy(new_ptr, ptr, block->size); //Copy the data from the old block to the new block
+  custom_free(ptr); //Free the old block
   return new_ptr;
 }
 
+//This function allocates memory for an array and initializes it to zero
+//@param "nelem" number of elements and "elsize" size of each element
 void *custom_calloc(size_t nelem, size_t elsize, meta_data find_free_block(meta_data *prev, size_t size))
 {
-  size_t size = nelem * elsize;
-  void *ptr = custom_malloc(size, find_free_block);
-  memset(ptr, 0, size);
+
+  size_t size = nelem * elsize;  //calculate the total size of the array
+  void *ptr = custom_malloc(size, find_free_block);  //allocate the required memory 
+  memset(ptr, 0, size);  //initialize the memory to zero
+
   return ptr;
 }
