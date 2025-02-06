@@ -223,6 +223,10 @@ void release_memory_if_required()
   // computes the total free space available in the memory pool and keeps track of the starting address of the free area
   while (ptr)
   {
+    if (ptr < mem_pool || ptr > end_of_pool)
+    {
+      break;
+    }
     if (ptr->free)
     {
       free_area_start = ptr;
@@ -373,8 +377,9 @@ void custom_free(void *ptr)
  
 
   merge_blocks(block); //merge adjacent free blocks
-
+  
   release_memory_if_required();
+  //memset(ptr, 0, block->size);
 
   //Free the entire Heap if no memory is allocated
   if (mem_pool != NULL) //if first block is free
