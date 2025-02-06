@@ -48,7 +48,8 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     unsigned long allocation_duration[max_allocations];
     int allocated_count = 0;
 
-    srand(1000); // Seed for random number generation
+    //srand(clock()); // Seed for random number generation
+    srand(1000);
     unsigned long start_time = clock();
     for (int i = 0; i < max_allocations; i++)
     {

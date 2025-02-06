@@ -122,6 +122,27 @@ void add_mem_to_pool(meta_data mem)
   }
 }
 
+
+meta_data create_new_block(void* memory, meta_data next_block, meta_data prev_block,int status, size_t size)
+{
+  meta_data block = memory;
+  block->size = size;
+  block->next = next_block;
+  block->prev = prev_block;
+  block->free = status;
+  block->ptr = (void *)(block + 1);
+  // Update the next block's prev pointer if it exists
+  if (block->next)
+  {
+    block->next->prev = block;
+  }
+  if (block->prev)
+  {
+    block->prev->next = block;
+  }
+  return block;
+}
+
 /**
  * @brief Splits a larger memory block into a smaller block of the requested size.
  *
@@ -142,23 +163,12 @@ void split_block(meta_data block, size_t size)
     return;
   }
   // Initialize the new block
-  meta_data new_block = (meta_data)new_block_address;
-  new_block->size = block->size - size - META_DATA_SIZE;
-  new_block->free = 1; // Mark as free
-  new_block->next = block->next;
-  new_block->prev = block;
-  new_block->ptr = (void *)(new_block + 1);
-
-
+  create_new_block(new_block_address, block->next, block, 1,block->size - size - META_DATA_SIZE);
   // Update the original block
   block->size = size;
-  block->next = new_block;
 
-  // Update the next block's prev pointer if it exists
-  if (new_block->next)
-  {
-    new_block->next->prev = new_block;
-  }
+  
+  
   splits_count++; // useful for performance analysis
 }
 
@@ -242,9 +252,6 @@ void release_memory_if_required()
   else
   {
 
-    // TODO: case when the free area is not at the start of the memory pool
-    // TODO: case when the free area is not at the start of the memory pool and behind the last free block is a used block
-
     reset = free_area_start;
     if (free_area_start->prev)
     {
@@ -276,23 +283,7 @@ meta_data allocate_mem(meta_data prev, size_t size)
     return NULL;
   }
 
-  meta_data block = memory; //first part of the allocated memory is used for metadata
-  block->size = size; //set block size
-  block->next = NULL; //no next block yet
-  block->prev = prev; //set previous block if exists
-
-  if (block)
-  {
-    //mark as allocated
-    block->free = 0;
-  }
-  //set the pointer to the usable memory area
-  block->ptr = block + 1;
-  if (prev)
-  {
-    prev->next = block;
-  }
-
+  meta_data block = create_new_block(memory, NULL, prev, 0, size);
   return block;
 }
 
