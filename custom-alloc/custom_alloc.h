@@ -8,7 +8,7 @@
 
 
 #define PAGE_SIZE 4096
-#define MEM_ALLOC_SIZE (4* PAGE_SIZE)
+#define MEM_ALLOC_SIZE (1* PAGE_SIZE)
 #define MEM_DEALLOC_SIZE (2 *PAGE_SIZE) // TODO: why??--> Maybe to reduce fragmentation by freeing large chunks?
 typedef struct meta_data *meta_data;
 

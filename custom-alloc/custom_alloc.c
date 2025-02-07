@@ -24,6 +24,10 @@ meta_data best_fit(meta_data *prev, size_t size)
       *prev = current->prev;
       best_fit_ptr = current;
       min_size = current->size;
+      if (min_size == size)
+      {
+        break;
+      }
     }
     current = current->next;
   }
@@ -62,17 +66,17 @@ meta_data next_fit(meta_data *prev, size_t size)
   }
 
   // if the first search did not find a suitable block, search from the beginning
-  current = mem_pool;
+  current = last_allocated;
   // stop if "current" reaches "last_allocated"
-  while (current && current != last_allocated)
+  while (current)
   {
-    if (is_valid_addr(current) && current->free && current->size >= size)
+    if (current->free && current->size >= size)
     {
       *prev = current->prev;
       last_allocated = current;
       return current;
     }
-    current = current->next;
+    current = current->prev;
   }
 
   return NULL;
@@ -83,7 +87,7 @@ meta_data first_fit(meta_data *prev, size_t size)
 {
   // implement first fit algorithm
 
-  meta_data current = mem_pool;
+  meta_data current = end_of_pool;
   // Loop through the entire linked list until we reach the end (current == NULL)
   while (current)
   {
@@ -92,7 +96,7 @@ meta_data first_fit(meta_data *prev, size_t size)
       *prev = current->prev;
       return current;
     }
-    current = current->next;
+    current = current->prev;
   }
 
 
@@ -172,9 +176,6 @@ void split_block(meta_data block, size_t size)
   meta_data new_block = create_new_block(new_block_address, block->next, block, 1,new_block_size);
   // Update the original block
   block->size = size;
-
-
-
 
   if(new_block->next == NULL)
   {
@@ -337,13 +338,16 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 
   if (mem == NULL) // if no free memory available in memory-pool
   {
+    
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
+    /*
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes sure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
-
+    */
+    
     //"allocate_mem()" to request memory from the OS
-    if ((mem = allocate_mem(prev, allocate_size)) == NULL)
+    if ((mem = allocate_mem(prev, s)) == NULL)
     {
       return NULL;
     }

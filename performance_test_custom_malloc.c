@@ -57,7 +57,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     for (int i = 0; i < max_allocations; i++)
     {
         int action = rand() % 100; // Generate a random number between 0 and 99
-        size_t size = (rand() % MAX_SIZE) + 1;
+        size_t size = (rand() % (MAX_SIZE)) + 1;
         if (action < ALLOC_PROB && allocated_count < max_allocations)
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
@@ -184,6 +184,7 @@ int main(void)
 
    // run_test("best_fit.txt", &best_fit);
     // test_next_fit();
+    /*
     printf("struct meta_data size: %zu, free(char): %zu,size(size_t): %zu ,ptr(void*): %zu, meta_data: %zu\n", sizeof(struct meta_data), sizeof(unsigned char),sizeof(size_t), sizeof(void *), (2* sizeof(meta_data)));
     printf("Heap size: %zu\n", get_heap_size());
     unsigned long *result = test_malloc(10000, &best_fit);
@@ -195,6 +196,6 @@ int main(void)
     printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
     result = test_malloc(10000, NULL);
     printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    
+    */ 
    
 }
