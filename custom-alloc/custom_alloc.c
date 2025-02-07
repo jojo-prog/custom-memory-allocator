@@ -217,16 +217,12 @@ void merge_blocks(meta_data ptr)
 void release_memory_if_required()
 {
 
-  meta_data ptr = mem_pool;
+  meta_data ptr = end_of_pool;
   meta_data free_area_start = NULL;
   size_t totalFreeSpace = 0;
   // computes the total free space available in the memory pool and keeps track of the starting address of the free area
   while (ptr)
   {
-    if (ptr < mem_pool || ptr > end_of_pool)
-    {
-      break;
-    }
     if (ptr->free)
     {
       free_area_start = ptr;
@@ -236,8 +232,9 @@ void release_memory_if_required()
     {
       free_area_start = NULL;
       totalFreeSpace = 0;
+      break;
     }
-    ptr = ptr->next;
+    ptr = ptr->prev;
   }
   // if the free area is less than the deallocation lot size or no free area exists, return
   if (free_area_start == NULL || totalFreeSpace < (size_t)MEM_DEALLOC_SIZE)
