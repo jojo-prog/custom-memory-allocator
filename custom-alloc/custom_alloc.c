@@ -18,7 +18,11 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   while (current)
   {
-
+    if (current->size == size)
+    {
+      *prev = current->prev;
+      return current;
+    }
     // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
@@ -131,7 +135,7 @@ meta_data create_new_block(void* memory, meta_data next_block, meta_data prev_bl
   block->next = next_block;
   block->prev = prev_block;
   block->free = status;
-  block->ptr = (void *)(block + 1);
+ // block->ptr = (void *)(block + 1);
   // Update the next block's prev pointer if it exists
   if (block->next)
   {
@@ -169,6 +173,15 @@ void split_block(meta_data block, size_t size)
   // Update the original block
   block->size = size;
 
+  block->next_free = new_block;
+
+  if (block->prev)
+  {
+    block->prev->next_free = new_block;
+  }
+
+
+
   if(new_block->next == NULL)
   {
     end_of_pool = new_block;
@@ -192,7 +205,9 @@ void merge_blocks(meta_data ptr)
   if (ptr->next && ptr->next->free)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
+    ptr->next_free = ptr->next->next_free;
     ptr->next = ptr->next->next;
+    
     if (ptr->next)
     {
       ptr->next->prev = ptr;
@@ -207,6 +222,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
     ptr->prev->next = ptr->next;
+    ptr->prev->next_free = ptr->next_free;
 
     if (ptr->next)
     {
@@ -359,7 +375,7 @@ int is_valid_addr(void *p)
     if (p > (void *)mem_pool && p < sbrk(0))
     {
       //validate the adress
-      void *ptr = HEADER_AREA(p)->ptr;
+      void *ptr = WRITABLE_AREA(HEADER_AREA(p));
       int res = ptr == p;
       return res;
     }
@@ -385,7 +401,19 @@ void custom_free(void *ptr)
 
   meta_data block = HEADER_AREA(ptr); //retrieves the metadata block for "ptr"
   block->free = 1; //marks the memory block as available
- 
+  
+  meta_data current = block->prev;
+  while (current)
+  {
+    if (current->free)
+    {
+      current->next_free = block;
+      break;
+    } else {
+      current->next_free = block;
+    }
+    current = current->prev;
+  }
 
   merge_blocks(block); //merge adjacent free blocks
   
