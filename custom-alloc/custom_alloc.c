@@ -18,7 +18,11 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   while (current)
   {
-
+    if (current->size == size)
+    {
+      *prev = current->prev;
+      return current;
+    }
     // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
