@@ -50,6 +50,9 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
 
     // srand(clock()); // Seed for random number generation
     srand(0);
+    clock_t seed = clock();
+    srand(seed);
+    printf("Seed: %ld\n", seed);
     unsigned long start_time = clock();
     for (int i = 0; i < max_allocations; i++)
     {
@@ -168,7 +171,7 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
 
         // free(result1);
         // free(result2);
-        free(result);
+        //free(result);
     }
 
     fwrite(results, sizeof(unsigned long) * 2, MAX_ALLOCATIONS, fp);
@@ -181,8 +184,8 @@ int main(void)
 
     run_test("best_fit.txt", &best_fit);
     // test_next_fit();
-    /*
-     printf("Heap size: %zu\n", get_heap_size());
+    
+    printf("Heap size: %zu\n", get_heap_size());
     unsigned long *result = test_malloc(10000, &best_fit);
     printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
     printf("Heap size: %zu\n", get_heap_size());
@@ -192,6 +195,6 @@ int main(void)
     printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
     result = test_malloc(10000, NULL);
     printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    */
+    
    
 }
