@@ -1,4 +1,5 @@
 #include "custom_alloc.h"
+#include <stdio.h>
 
 // Searches for the smallest free block that is large enough to satisfy the memory request
 // the idea is to minimize fragmentation by choosing the smallest possible available block
@@ -163,9 +164,17 @@ void split_block(meta_data block, size_t size)
     return;
   }
   // Initialize the new block
-  create_new_block(new_block_address, block->next, block, 1,block->size - size - META_DATA_SIZE);
+  size_t new_block_size = block->size - size - META_DATA_SIZE;
+  meta_data new_block = create_new_block(new_block_address, block->next, block, 1,new_block_size);
   // Update the original block
   block->size = size;
+
+  if(new_block->next == NULL)
+  {
+    end_of_pool = new_block;
+  }
+
+  
 
   
   
@@ -190,6 +199,10 @@ void merge_blocks(meta_data ptr)
     {
       ptr->next->prev = ptr;
     }
+    if(ptr->next == end_of_pool || ptr->next == NULL)
+    {
+      end_of_pool = ptr;
+    }
     merges_count++;
   }
   // If "ptr->prev" exists and is free, merge it backward
@@ -201,6 +214,10 @@ void merge_blocks(meta_data ptr)
     if (ptr->next)
     {
       ptr->next->prev = ptr->prev;
+    }
+    if(ptr == end_of_pool)
+    {
+      end_of_pool = ptr->prev;
     }
 
     merges_count++; // useful for performance analysis
