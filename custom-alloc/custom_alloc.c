@@ -32,6 +32,7 @@ meta_data best_fit(meta_data *prev, size_t size)
   return best_fit_ptr;
 }
 
+//The Next Fit algorithm works similarly to First Fit, but instead of always searching from the beginning, it resumes searching from the last allocated block.
 meta_data next_fit(meta_data *prev, size_t size)
 {
 
@@ -48,6 +49,7 @@ meta_data next_fit(meta_data *prev, size_t size)
   {
     while (current)
     {
+      // if a free block of sufficient size is found
       if (current->free && current->size >= size)
       {
         *prev = current->prev;
@@ -55,6 +57,7 @@ meta_data next_fit(meta_data *prev, size_t size)
         last_allocated = current;
         return current;
       }
+      // if no suitable block is found, the function moves to the next step
       current = current->next;
     }
   }
@@ -123,16 +126,16 @@ void add_mem_to_pool(meta_data mem)
   }
 }
 
-
+//This function initializes a new memory block with metadata and links it into the memory pool's doubly linked list
 meta_data create_new_block(void* memory, meta_data next_block, meta_data prev_block,int status, size_t size)
 {
   meta_data block = memory;
   block->size = size;
   block->next = next_block;
   block->prev = prev_block;
-  block->free = status;
-  block->ptr = (void *)(block + 1);
-  // Update the next block's prev pointer if it exists
+  block->free = status; // set free/allocated status
+  block->ptr = (void *)(block + 1); // pointer to the usable memory
+  // update the next block's prev pointer if it exists
   if (block->next)
   {
     block->next->prev = block;
@@ -173,10 +176,6 @@ void split_block(meta_data block, size_t size)
   {
     end_of_pool = new_block;
   }
-
-  
-
-  
   
   splits_count++; // useful for performance analysis
 }
