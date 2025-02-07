@@ -177,8 +177,6 @@ void split_block(meta_data block, size_t size)
   
 
   
-  
-  splits_count++; // useful for performance analysis
 }
 
 /**
@@ -203,7 +201,6 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr;
     }
-    merges_count++;
   }
   // If "ptr->prev" exists and is free, merge it backward
   if (ptr->prev && ptr->prev->free)
@@ -219,8 +216,6 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr->prev;
     }
-
-    merges_count++; // useful for performance analysis
   }
 }
 
@@ -266,17 +261,19 @@ void release_memory_if_required()
     reset = mem_pool;
     mem_pool = NULL;
     last_allocated = NULL;
+    end_of_pool = NULL;
   }
   else
   {
 
     reset = free_area_start;
+
     if (free_area_start->prev)
     {
       free_area_start->prev->next = NULL;
     }
+    end_of_pool = free_area_start->prev;
   }
-  frees_count++;
   brk(reset);
 }
 
@@ -405,6 +402,7 @@ void custom_free(void *ptr)
         brk(mem_pool); //release the entire heap back to the OS
         mem_pool = NULL;
         last_allocated = NULL; //no memory is allocated
+        end_of_pool = NULL;
       }
     }
   }
