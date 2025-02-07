@@ -95,7 +95,9 @@ meta_data first_fit(meta_data *prev, size_t size)
     current = current->next;
   }
 
-  return current;
+
+  return NULL;
+
 }
 
 /**

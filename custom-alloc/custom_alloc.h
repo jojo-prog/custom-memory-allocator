@@ -7,8 +7,8 @@
 #include <math.h>
 
 
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#define MEM_ALLOC_SIZE (1* PAGE_SIZE)
+#define PAGE_SIZE 4096
+#define MEM_ALLOC_SIZE (4* PAGE_SIZE)
 #define MEM_DEALLOC_SIZE (2 *PAGE_SIZE) // TODO: why??--> Maybe to reduce fragmentation by freeing large chunks?
 typedef struct meta_data *meta_data;
 
@@ -42,6 +42,7 @@ struct meta_data
 meta_data mem_pool = NULL;
 meta_data last_allocated = NULL;
 meta_data end_of_pool = NULL;
+
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);

@@ -7,6 +7,7 @@
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 #define DEBUG 0
+
 void print_memory_pool()
 {
     meta_data current = mem_pool;
@@ -62,6 +63,7 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             pointers[allocated_count] = find_free_block ? custom_malloc(size, find_free_block) : malloc(size);
             // pointers[allocated_count] = malloc(size);
+
             //print_memory_pool();
 
             DEBUG_PRINT;
@@ -110,7 +112,6 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             DEBUG_PRINT;
         }
     }
-
     DEBUG_PRINT;
 
     // compute avarage allocation duration
