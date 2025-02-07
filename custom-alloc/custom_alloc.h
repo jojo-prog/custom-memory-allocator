@@ -22,12 +22,13 @@ typedef struct meta_data *meta_data;
  * @ptr: Pointer to the actual memory block.
  */
 struct meta_data
-{
-    void* ptr;          // Pointer to the memory block
-    unsigned int free;     // 1-bit for free status
-    size_t size;               // Block size
+{                  
     meta_data next;    // Next block
     meta_data prev;    // Previous block (optional)
+    size_t size; // Block size
+    
+    //void* ptr;          // Pointer to the memory block
+    unsigned char free;     // 1-bit for free status
     
 };
 
@@ -41,11 +42,6 @@ struct meta_data
 meta_data mem_pool = NULL;
 meta_data last_allocated = NULL;
 meta_data end_of_pool = NULL;
-
-unsigned long splits_count = 0;
-unsigned long frees_count = 0;
-unsigned long merges_count = 0;
-unsigned long possible_heap_shrink = 0;
 
 int brk(void *addr);
 void *sbrk(intptr_t increment);

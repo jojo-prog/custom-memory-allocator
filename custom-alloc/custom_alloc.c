@@ -18,7 +18,6 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   while (current)
   {
-
     // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
@@ -133,9 +132,9 @@ meta_data create_new_block(void* memory, meta_data next_block, meta_data prev_bl
   block->size = size;
   block->next = next_block;
   block->prev = prev_block;
-  block->free = status; // set free/allocated status
-  block->ptr = (void *)(block + 1); // pointer to the usable memory
-  // update the next block's prev pointer if it exists
+  block->free = status;
+ // block->ptr = (void *)(block + 1);
+  // Update the next block's prev pointer if it exists
   if (block->next)
   {
     block->next->prev = block;
@@ -172,12 +171,17 @@ void split_block(meta_data block, size_t size)
   // Update the original block
   block->size = size;
 
+
+
+
   if(new_block->next == NULL)
   {
     end_of_pool = new_block;
   }
+
   
-  splits_count++; // useful for performance analysis
+
+  
 }
 
 /**
@@ -194,6 +198,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
     ptr->next = ptr->next->next;
+    
     if (ptr->next)
     {
       ptr->next->prev = ptr;
@@ -202,13 +207,13 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr;
     }
-    merges_count++;
   }
   // If "ptr->prev" exists and is free, merge it backward
   if (ptr->prev && ptr->prev->free)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
     ptr->prev->next = ptr->next;
+
 
     if (ptr->next)
     {
@@ -218,8 +223,6 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr->prev;
     }
-
-    merges_count++; // useful for performance analysis
   }
 }
 
@@ -265,17 +268,19 @@ void release_memory_if_required()
     reset = mem_pool;
     mem_pool = NULL;
     last_allocated = NULL;
+    end_of_pool = NULL;
   }
   else
   {
 
     reset = free_area_start;
+
     if (free_area_start->prev)
     {
       free_area_start->prev->next = NULL;
     }
+    end_of_pool = free_area_start->prev;
   }
-  frees_count++;
   brk(reset);
 }
 
@@ -361,7 +366,7 @@ int is_valid_addr(void *p)
     if (p > (void *)mem_pool && p < sbrk(0))
     {
       //validate the adress
-      void *ptr = HEADER_AREA(p)->ptr;
+      void *ptr = WRITABLE_AREA(HEADER_AREA(p));
       int res = ptr == p;
       return res;
     }
@@ -387,7 +392,7 @@ void custom_free(void *ptr)
 
   meta_data block = HEADER_AREA(ptr); //retrieves the metadata block for "ptr"
   block->free = 1; //marks the memory block as available
- 
+  
 
   merge_blocks(block); //merge adjacent free blocks
   
@@ -404,6 +409,7 @@ void custom_free(void *ptr)
         brk(mem_pool); //release the entire heap back to the OS
         mem_pool = NULL;
         last_allocated = NULL; //no memory is allocated
+        end_of_pool = NULL;
       }
     }
   }

@@ -12,7 +12,7 @@ void print_memory_pool()
     meta_data current = mem_pool;
     while (current)
     {
-        printf("Address: %p, Memory: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current,current->ptr ,current->size, current->free, current->next, current->prev);
+        printf("Address: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current ,current->size, current->free, current->next, current->prev);
         current = current->next;
     }
     printf("\n");
@@ -166,8 +166,6 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
 
         printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
 
-        splits_count = 0;
-        frees_count = 0;
         // printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
 
         // free(result1);
@@ -185,7 +183,7 @@ int main(void)
 
    // run_test("best_fit.txt", &best_fit);
     // test_next_fit();
-    /*
+    printf("struct meta_data size: %zu, free(char): %zu,size(size_t): %zu ,ptr(void*): %zu, meta_data: %zu\n", sizeof(struct meta_data), sizeof(unsigned char),sizeof(size_t), sizeof(void *), (2* sizeof(meta_data)));
     printf("Heap size: %zu\n", get_heap_size());
     unsigned long *result = test_malloc(10000, &best_fit);
     printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
@@ -196,6 +194,6 @@ int main(void)
     printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
     result = test_malloc(10000, NULL);
     printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    */
+    
    
 }
