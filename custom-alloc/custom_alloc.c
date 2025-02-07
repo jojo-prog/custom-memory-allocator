@@ -18,11 +18,6 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   while (current)
   {
-    if (current->size == size)
-    {
-      *prev = current->prev;
-      return current;
-    }
     // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
@@ -173,12 +168,6 @@ void split_block(meta_data block, size_t size)
   // Update the original block
   block->size = size;
 
-  block->next_free = new_block;
-
-  if (block->prev)
-  {
-    block->prev->next_free = new_block;
-  }
 
 
 
@@ -205,7 +194,6 @@ void merge_blocks(meta_data ptr)
   if (ptr->next && ptr->next->free)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
-    ptr->next_free = ptr->next->next_free;
     ptr->next = ptr->next->next;
     
     if (ptr->next)
@@ -222,7 +210,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
     ptr->prev->next = ptr->next;
-    ptr->prev->next_free = ptr->next_free;
+
 
     if (ptr->next)
     {
@@ -402,18 +390,6 @@ void custom_free(void *ptr)
   meta_data block = HEADER_AREA(ptr); //retrieves the metadata block for "ptr"
   block->free = 1; //marks the memory block as available
   
-  meta_data current = block->prev;
-  while (current)
-  {
-    if (current->free)
-    {
-      current->next_free = block;
-      break;
-    } else {
-      current->next_free = block;
-    }
-    current = current->prev;
-  }
 
   merge_blocks(block); //merge adjacent free blocks
   
