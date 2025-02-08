@@ -10,6 +10,7 @@
 #define SEED (unsigned)time(NULL)
 
 int stop_loop_index;
+size_t r = 0;
 
 void print_memory_pool()
 {
@@ -18,8 +19,10 @@ void print_memory_pool()
     {
         printf("Address: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current ,current->size, current->free, current->next, current->prev);
         current = current->next;
-    }
+    };
+    sbrk(r);
     printf("\n");
+    sbrk(-r);
 }
 
 #define DEBUG_PRINT \
@@ -213,11 +216,12 @@ void test_first_fit(int size, clock_t seed, int stop_index)
 int main(void)
 {
 
-    run_test("best_fit.txt", &best_fit);
+     run_test("best_fit.txt", &best_fit);
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
-    
-    //test_best_fit(10000,SEED, -1);
+
+   
+
    
 }

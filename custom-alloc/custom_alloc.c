@@ -60,7 +60,7 @@ meta_data best_fit(meta_data *prev, size_t size)
         break;
       }
     }
-    if(current->next == NULL)
+    if (current->next == NULL)
     {
       end_of_pool = current;
     }
@@ -70,7 +70,7 @@ meta_data best_fit(meta_data *prev, size_t size)
   return best_fit_ptr;
 }
 
-//The Next Fit algorithm works similarly to First Fit, but instead of always searching from the beginning, it resumes searching from the last allocated block.
+// The Next Fit algorithm works similarly to First Fit, but instead of always searching from the beginning, it resumes searching from the last allocated block.
 meta_data next_fit(meta_data *prev, size_t size)
 {
 
@@ -96,12 +96,11 @@ meta_data next_fit(meta_data *prev, size_t size)
         return current;
       }
       // if no suitable block is found, the function moves to the next step
-      if(current->next == NULL)
+      if (current->next == NULL)
       {
         end_of_pool = current;
       }
       current = current->next;
-      
     }
   }
 
@@ -143,9 +142,7 @@ meta_data first_fit(meta_data *prev, size_t size)
     current = current->prev;
   }
 
-
   return NULL;
-
 }
 
 /**
@@ -182,8 +179,8 @@ meta_data create_new_block(void *memory, meta_data next_block, meta_data prev_bl
   block->next = next_block;
   block->prev = prev_block;
   block->free = status;
-  block->ptr = (void *)(block + 1);
-  // Update the next block's prev pointer if it exists
+  // block->ptr = (void *)(block + 1);
+  //  Update the next block's prev pointer if it exists
   if (block->next)
   {
     block->next->prev = block;
@@ -227,11 +224,9 @@ void split_block(meta_data block, size_t size)
   {
     end_of_pool = new_block;
   }
-  
 
   check_correct_meta_data(block);
   check_correct_meta_data(new_block);
-
 }
 
 /**
@@ -249,7 +244,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
     ptr->next = ptr->next->next;
-    
+
     if (ptr->next)
     {
       ptr->next->prev = ptr;
@@ -265,7 +260,6 @@ void merge_blocks(meta_data ptr)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
     ptr->prev->next = ptr->next;
-
 
     if (ptr->next)
     {
@@ -334,6 +328,7 @@ void release_memory_if_required()
       end_of_pool = free_area_start->prev;
     }
   }
+
   brk(reset);
 }
 
@@ -378,7 +373,7 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 {
   meta_data mem = NULL;
   meta_data prev = NULL;
-  size_t s = ALING(size, 4); // align the size to 4 bytes for better memory access efficiency
+  size_t s = ALLING(size, 32); // align the size to 4 bytes for better memory access efficiency
 
   // check memory-pool if any free memory available
   mem = find_free_block(&prev, s);
@@ -388,14 +383,13 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 
   if (mem == NULL) // if no free memory available in memory-pool
   {
-    
+
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
-    
+
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes sure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
-    
-    
+
     //"allocate_mem()" to request memory from the OS
     if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {
@@ -422,7 +416,7 @@ int is_valid_addr(void *p)
     if (p > (void *)mem_pool && p < sbrk(0))
     {
       // validate the adress
-      void *ptr = HEADER_AREA(p)->ptr;
+      void *ptr = HEADER_AREA(p) + 1;
       int res = ptr == p;
       return res;
     }
@@ -455,18 +449,14 @@ void custom_free(void *ptr)
   // memset(ptr, 0, block->size);
 
   // Free the entire Heap if no memory is allocated
-  if (mem_pool != NULL) // if first block is free
+
+  if (mem_pool != NULL && mem_pool->free && mem_pool->next == NULL) // if first block is free
   {
-    if (mem_pool->free)
-    {
-      if (mem_pool->next == NULL)
-      {
-        brk(mem_pool); // release the entire heap back to the OS
-        mem_pool = NULL;
-        last_allocated = NULL; // no memory is allocated
-        end_of_pool = NULL;
-      }
-    }
+
+    brk(mem_pool); // release the entire heap back to the OS
+    mem_pool = NULL;
+    last_allocated = NULL; // no memory is allocated
+    end_of_pool = NULL;
   }
 }
 

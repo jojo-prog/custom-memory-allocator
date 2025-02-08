@@ -24,9 +24,9 @@ typedef struct meta_data *meta_data;
  * @ptr: Pointer to the actual memory block.
  */
 struct meta_data
-{                  
-    void* ptr;          // Pointer to the memory block
-    unsigned char free;     // 1-bit for free status
+{   
+    unsigned char free;     // 1-bit for free status         
+    //void* ptr;          // Pointer to the memory block
     size_t size; // Block size
     meta_data next;    // Next block
     meta_data prev;    // Previous block (optional)
@@ -38,7 +38,7 @@ struct meta_data
 #define WRITABLE_AREA(p) (((meta_data )p) + 1)
 #define HEADER_AREA(p) (((meta_data )p) - 1)
 #define MAX(X, Y) (((size_t)(X) > (size_t)(Y)) ? (size_t)(X) : (size_t)(Y))
-#define ALING(x, a) (((x) + (a - 1)) & ~(a - 1))
+#define ALLING(x, a) (((x) + (a - 1)) & ~(a - 1))
 
 meta_data mem_pool = NULL;
 meta_data last_allocated = NULL;
