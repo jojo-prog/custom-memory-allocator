@@ -7,12 +7,13 @@
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 #define DEBUG 0
+
 void print_memory_pool()
 {
     meta_data current = mem_pool;
     while (current)
     {
-        printf("Address: %p, Memory: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current,current->ptr ,current->size, current->free, current->next, current->prev);
+        printf("Address: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current ,current->size, current->free, current->next, current->prev);
         current = current->next;
     }
     printf("\n");
@@ -56,12 +57,13 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     for (int i = 0; i < max_allocations; i++)
     {
         int action = rand() % 100; // Generate a random number between 0 and 99
-        size_t size = (rand() % MAX_SIZE) + 1;
+        size_t size = (rand() % (MAX_SIZE)) + 1;
         if (action < ALLOC_PROB && allocated_count < max_allocations)
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             pointers[allocated_count] = find_free_block ? custom_malloc(size, find_free_block) : malloc(size);
             // pointers[allocated_count] = malloc(size);
+
             //print_memory_pool();
 
             DEBUG_PRINT;
@@ -110,7 +112,6 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
             DEBUG_PRINT;
         }
     }
-
     DEBUG_PRINT;
 
     // compute avarage allocation duration
@@ -200,6 +201,7 @@ int main(void)
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
     /*
+    printf("struct meta_data size: %zu, free(char): %zu,size(size_t): %zu ,ptr(void*): %zu, meta_data: %zu\n", sizeof(struct meta_data), sizeof(unsigned char),sizeof(size_t), sizeof(void *), (2* sizeof(meta_data)));
     printf("Heap size: %zu\n", get_heap_size());
     unsigned long *result = test_malloc(10000, &best_fit);
     printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
@@ -210,6 +212,6 @@ int main(void)
     printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
     result = test_malloc(10000, NULL);
     printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    */
+    */ 
    
 }

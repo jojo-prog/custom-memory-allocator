@@ -50,13 +50,16 @@ meta_data best_fit(meta_data *prev, size_t size)
 
   while (current)
   {
-
     // check if the block is free, large enough and smaller than the current
     if (current->free && current->size >= size && current->size < min_size)
     {
       *prev = current->prev;
       best_fit_ptr = current;
       min_size = current->size;
+      if (min_size == size)
+      {
+        break;
+      }
     }
     current = current->next;
   }
@@ -64,6 +67,7 @@ meta_data best_fit(meta_data *prev, size_t size)
   return best_fit_ptr;
 }
 
+//The Next Fit algorithm works similarly to First Fit, but instead of always searching from the beginning, it resumes searching from the last allocated block.
 meta_data next_fit(meta_data *prev, size_t size)
 {
 
@@ -80,6 +84,7 @@ meta_data next_fit(meta_data *prev, size_t size)
   {
     while (current)
     {
+      // if a free block of sufficient size is found
       if (current->free && current->size >= size)
       {
         *prev = current->prev;
@@ -87,22 +92,23 @@ meta_data next_fit(meta_data *prev, size_t size)
         last_allocated = current;
         return current;
       }
+      // if no suitable block is found, the function moves to the next step
       current = current->next;
     }
   }
 
   // if the first search did not find a suitable block, search from the beginning
-  current = mem_pool;
+  current = last_allocated;
   // stop if "current" reaches "last_allocated"
-  while (current && current != last_allocated)
+  while (current)
   {
-    if (is_valid_addr(current) && current->free && current->size >= size)
+    if (current->free && current->size >= size)
     {
       *prev = current->prev;
       last_allocated = current;
       return current;
     }
-    current = current->next;
+    current = current->prev;
   }
 
   return NULL;
@@ -113,7 +119,7 @@ meta_data first_fit(meta_data *prev, size_t size)
 {
   // implement first fit algorithm
 
-  meta_data current = mem_pool;
+  meta_data current = end_of_pool;
   // Loop through the entire linked list until we reach the end (current == NULL)
   while (current)
   {
@@ -122,10 +128,12 @@ meta_data first_fit(meta_data *prev, size_t size)
       *prev = current->prev;
       return current;
     }
-    current = current->next;
+    current = current->prev;
   }
 
-  return current;
+
+  return NULL;
+
 }
 
 /**
@@ -162,7 +170,7 @@ meta_data create_new_block(void *memory, meta_data next_block, meta_data prev_bl
   block->next = next_block;
   block->prev = prev_block;
   block->free = status;
-  block->ptr = (void *)(block + 1);
+ // block->ptr = (void *)(block + 1);
   // Update the next block's prev pointer if it exists
   if (block->next)
   {
@@ -226,6 +234,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->size += ptr->next->size + META_DATA_SIZE;
     ptr->next = ptr->next->next;
+    
     if (ptr->next)
     {
       ptr->next->prev = ptr;
@@ -234,7 +243,6 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr;
     }
-    merges_count++;
   }
   check_correct_meta_data(ptr);
   // If "ptr->prev" exists and is free, merge it backward
@@ -242,6 +250,7 @@ void merge_blocks(meta_data ptr)
   {
     ptr->prev->size += ptr->size + META_DATA_SIZE;
     ptr->prev->next = ptr->next;
+
 
     if (ptr->next)
     {
@@ -251,8 +260,6 @@ void merge_blocks(meta_data ptr)
     {
       end_of_pool = ptr->prev;
     }
-
-    merges_count++; // useful for performance analysis
   }
   check_correct_meta_data(ptr);
 }
@@ -300,18 +307,20 @@ void release_memory_if_required()
     mem_pool = NULL;
     last_allocated = NULL;
     end_of_pool = NULL;
+    end_of_pool = NULL;
   }
   else
   {
 
     reset = free_area_start;
+
     if (free_area_start->prev)
     {
       free_area_start->prev->next = NULL;
     }
     end_of_pool = free_area_start->prev;
+    end_of_pool = free_area_start->prev;
   }
-  frees_count++;
   brk(reset);
 }
 
@@ -366,13 +375,16 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 
   if (mem == NULL) // if no free memory available in memory-pool
   {
+    
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
+    /*
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes sure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
-
+    */
+    
     //"allocate_mem()" to request memory from the OS
-    if ((mem = allocate_mem(prev, allocate_size)) == NULL)
+    if ((mem = allocate_mem(prev, s)) == NULL)
     {
       return NULL;
     }
