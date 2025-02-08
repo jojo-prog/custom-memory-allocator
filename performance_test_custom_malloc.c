@@ -14,7 +14,7 @@ size_t r = 0;
 
 void print_memory_pool()
 {
-    meta_data current = mem_pool;
+    meta_data current = heap_list_start;
     while (current)
     {
         printf("Address: %p ,Block size: %zu, Block free: %d, Next: %p, Prev: %p\n",current ,current->size, current->free, current->next, current->prev);
@@ -216,7 +216,7 @@ void test_first_fit(int size, clock_t seed, int stop_index)
 int main(void)
 {
 
-    run_test("best_fit.txt", &best_fit);
+    //run_test("best_fit.txt", &best_fit);
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();

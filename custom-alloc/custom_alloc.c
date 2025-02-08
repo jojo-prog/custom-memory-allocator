@@ -3,7 +3,7 @@
 
 void check_correct_meta_data(meta_data block)
 {
-  if (mem_pool == NULL || end_of_pool == NULL)
+  if (heap_list_start == NULL || heap_list_end == NULL)
   {
     return;
   }
@@ -11,23 +11,23 @@ void check_correct_meta_data(meta_data block)
   meta_data end = sbrk(0);
   if (block->next == NULL)
   {
-    assert(block == end_of_pool);
+    assert(block == heap_list_end );
   }
   else
   {
     assert(block->next >= block);
     assert(block->next < end);
-    assert(block->next > mem_pool);
+    assert(block->next > heap_list_start);
   }
   if (block->prev == NULL)
   {
-    assert(block == mem_pool);
+    assert(block == heap_list_start);
   }
   else
   {
     assert(block->prev <= block);
     assert(block->prev < end);
-    assert(block->prev >= mem_pool);
+    assert(block->prev >= heap_list_start);
   }
   assert(block->size > 0);
 }
@@ -37,12 +37,12 @@ void check_correct_meta_data(meta_data block)
 meta_data best_fit(meta_data *prev, size_t size)
 {
   // if no memory has been allocated yet
-  if (mem_pool == NULL)
+  if (heap_list_start == NULL)
   {
     return NULL;
   }
 
-  meta_data current = mem_pool;
+  meta_data current = heap_list_start;
   meta_data best_fit_ptr = NULL;
   // ensures any valid block will be smaller
   size_t min_size = -1;
@@ -62,7 +62,7 @@ meta_data best_fit(meta_data *prev, size_t size)
     }
     if (current->next == NULL)
     {
-      end_of_pool = current;
+      heap_list_end  = current;
     }
     current = current->next;
   }
@@ -79,11 +79,11 @@ meta_data next_fit(meta_data *prev, size_t size)
   // if "last_allocated" is NULL, initialize it to the start of the memory pool
   if (last_allocated == NULL)
   {
-    last_allocated = mem_pool;
+    last_allocated = heap_list_start;
   }
 
   meta_data current = last_allocated;
-  if (mem_pool != last_allocated)
+  if (heap_list_start != last_allocated)
   {
     while (current)
     {
@@ -98,7 +98,7 @@ meta_data next_fit(meta_data *prev, size_t size)
       // if no suitable block is found, the function moves to the next step
       if (current->next == NULL)
       {
-        end_of_pool = current;
+        heap_list_end  = current;
       }
       current = current->next;
     }
@@ -126,7 +126,7 @@ meta_data first_fit(meta_data *prev, size_t size)
 {
   // implement first fit algorithm
 
-  meta_data current = end_of_pool;
+  meta_data current = heap_list_end ;
   // Loop through the entire linked list until we reach the end (current == NULL)
   while (current)
   {
@@ -137,7 +137,7 @@ meta_data first_fit(meta_data *prev, size_t size)
     }
     if (current->next == NULL)
     {
-      end_of_pool = current;
+      heap_list_end = current;
     }
     current = current->prev;
   }
@@ -153,22 +153,22 @@ meta_data first_fit(meta_data *prev, size_t size)
  *
  * @param mem The memory block to be added to the pool.
  */
-void add_mem_to_pool(meta_data mem)
+void add_block_to_heap(meta_data mem)
 {
   // if "mem_pool" is empty, set it as the First Block
-  if (mem_pool == NULL)
+  if (heap_list_start == NULL)
   {
-    mem_pool = mem;
-    mem_pool->next = NULL;
-    mem_pool->prev = NULL;
-    end_of_pool = mem_pool;
+    heap_list_start = mem;
+    heap_list_start->next = NULL;
+    heap_list_start->prev = NULL;
+    heap_list_end = heap_list_start;
   }
   else
   {
     // add the new block to the end of the memory pool
-    end_of_pool->next = mem;
-    mem->prev = end_of_pool;
-    end_of_pool = mem;
+    heap_list_end ->next = mem;
+    mem->prev = heap_list_end ;
+    heap_list_end  = mem;
   }
 }
 
@@ -222,7 +222,7 @@ void split_block(meta_data block, size_t size)
   block->size = size;
   if (new_block->next == NULL)
   {
-    end_of_pool = new_block;
+    heap_list_end  = new_block;
   }
 
   check_correct_meta_data(block);
@@ -251,7 +251,7 @@ void merge_blocks(meta_data ptr)
     }
     if (ptr->next == NULL)
     {
-      end_of_pool = ptr;
+      heap_list_end  = ptr;
     }
   }
   check_correct_meta_data(ptr);
@@ -267,7 +267,7 @@ void merge_blocks(meta_data ptr)
     }
     if (ptr == NULL)
     {
-      end_of_pool = ptr->prev;
+      heap_list_end  = ptr->prev;
     }
   }
   check_correct_meta_data(ptr);
@@ -283,7 +283,7 @@ void merge_blocks(meta_data ptr)
 void release_memory_if_required()
 {
 
-  meta_data ptr = end_of_pool;
+  meta_data ptr = heap_list_end ;
   meta_data free_area_start = NULL;
   size_t totalFreeSpace = 0;
   // computes the total free space available in the memory pool and keeps track of the starting address of the free area
@@ -310,12 +310,12 @@ void release_memory_if_required()
 
   void *reset = NULL;
 
-  if (free_area_start == mem_pool)
+  if (free_area_start ==heap_list_start)
   {
-    reset = mem_pool;
-    mem_pool = NULL;
+    reset = heap_list_start;
+    heap_list_start = NULL;
     last_allocated = NULL;
-    end_of_pool = NULL;
+    heap_list_end  = NULL;
   }
   else
   {
@@ -325,7 +325,7 @@ void release_memory_if_required()
     if (free_area_start->prev)
     {
       free_area_start->prev->next = NULL;
-      end_of_pool = free_area_start->prev;
+      heap_list_end  = free_area_start->prev;
     }
   }
 
@@ -343,7 +343,7 @@ void release_memory_if_required()
  * @param size The size of the new memory block to be inserted.
  * @return The metadata of the newly inserted memory block.
  */
-meta_data allocate_mem(meta_data prev, size_t size)
+meta_data allocate_block(meta_data prev, size_t size)
 {
 
   void *memory = sbrk(size + META_DATA_SIZE); // Expands the heap space by "size + META_DATA_SIZE" bytes
@@ -391,12 +391,12 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
 
     //"allocate_mem()" to request memory from the OS
-    if ((mem = allocate_mem(prev, allocate_size)) == NULL)
+    if ((mem = allocate_block(prev, allocate_size)) == NULL)
     {
       return NULL;
     }
 
-    add_mem_to_pool(mem); // add the memory to memory-pool
+    add_block_to_heap(mem); // add the memory to memory-pool
   }
 
   // if the block is larger than the requested size, split it
@@ -410,10 +410,10 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
 // This function checks if a given pointer p is a valid memory address allocated by our custom memory allocator
 int is_valid_addr(void *p)
 {
-  if (mem_pool)
+  if (heap_list_start)
   {
     // ensures our pointer is within "mem_pool", which is the start of our managed heap and "sbrk(0)", which is the current program break (end of allocated heap)
-    if (p > (void *)mem_pool && p < sbrk(0))
+    if (p > (void *)heap_list_start && p < sbrk(0))
     {
       // validate the adress
       void *ptr = HEADER_AREA(p) + 1;
@@ -450,13 +450,13 @@ void custom_free(void *ptr)
 
   // Free the entire Heap if no memory is allocated
 
-  if (mem_pool != NULL && mem_pool->free && mem_pool->next == NULL) // if first block is free
+  if (heap_list_start != NULL && heap_list_start->free && heap_list_start->next == NULL) // if first block is free
   {
 
-    brk(mem_pool); // release the entire heap back to the OS
-    mem_pool = NULL;
+    brk(heap_list_start); // release the entire heap back to the OS
+    heap_list_start = NULL;
     last_allocated = NULL; // no memory is allocated
-    end_of_pool = NULL;
+    heap_list_end  = NULL;
   }
 }
 

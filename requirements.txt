@@ -1,9 +1,0 @@
-1.  malloc():
-    implement three strategies: Best Fit, First Fit, and Next Fit.
-    ensuring compliance with alignment requirements
-2.  free():
-    Deallocates the memory block pointed to by ptr, making it available for future allocations. 
-    Implementation of the free function should support the merging of adjacent free blocks, reducing fragmentation.
-3.  realloc()
-4.  calloc()
-5.  Testing

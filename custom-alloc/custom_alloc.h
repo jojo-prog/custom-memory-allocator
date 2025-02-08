@@ -40,9 +40,9 @@ struct meta_data
 #define MAX(X, Y) (((size_t)(X) > (size_t)(Y)) ? (size_t)(X) : (size_t)(Y))
 #define ALLING(x, a) (((x) + (a - 1)) & ~(a - 1))
 
-meta_data mem_pool = NULL;
+meta_data heap_list_start = NULL;
 meta_data last_allocated = NULL;
-meta_data end_of_pool = NULL;
+meta_data heap_list_end = NULL;
 
 
 int brk(void *addr);
