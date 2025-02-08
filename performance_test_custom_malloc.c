@@ -7,6 +7,9 @@
 #define ALLOC_PROB 70 // Probability (in %) of allocating memory
 #define FREE_PROB 30  // Probability (in %) of freeing memory
 #define DEBUG 0
+#define SEED (unsigned)time(NULL)
+
+int stop_loop_index;
 
 void print_memory_pool()
 {
@@ -41,8 +44,12 @@ size_t get_heap_size()
     return (size_t)((char *)current_break - (char *)heap_base);
 }
 
-unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data *prev, size_t size))
+unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(meta_data *prev, size_t size), clock_t seed)
 {
+    if (max_allocations <= 0)
+    {
+        return (unsigned long[]){0, 0};
+    }
     void *pointers[max_allocations];
     size_t heap_sizes[max_allocations];
     unsigned long allocation_duration[max_allocations];
@@ -50,7 +57,6 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
 
     // srand(clock()); // Seed for random number generation
     //srand(0);
-    clock_t seed = clock();
     srand(seed);
     //printf("Seed: %ld ", seed);
     unsigned long start_time = clock();
@@ -58,14 +64,18 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     {
         int action = rand() % 100; // Generate a random number between 0 and 99
         size_t size = (rand() % (MAX_SIZE)) + 1;
+
+        if (i == stop_loop_index && DEBUG)
+        {
+            printf("Stop loop index: %d\n", i);
+            print_memory_pool();
+        }
+
         if (action < ALLOC_PROB && allocated_count < max_allocations)
         {
             // Allocate memory of random size between 1 and MAX_SIZE bytes
             pointers[allocated_count] = find_free_block ? custom_malloc(size, find_free_block) : malloc(size);
-            // pointers[allocated_count] = malloc(size);
-
-            //print_memory_pool();
-
+        
             DEBUG_PRINT;
 
             if (pointers[allocated_count] == NULL)
@@ -134,12 +144,6 @@ unsigned long *test_malloc(int max_allocations, meta_data (*find_free_block)(met
     return (unsigned long[]){average_duration, average_heap_size};
 }
 
-char *to_string(unsigned long *result)
-{
-    char *str = (char *)malloc(100 * sizeof(char));
-    sprintf(str, "%lu %lu\n", result[0], result[1]);
-    return str;
-}
 
 void append_to_file(const char *filename, unsigned long v1, unsigned long v2) {
     char buffer[50];  // Fixed buffer size, enough for two unsigned long and a newline
@@ -165,20 +169,46 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         exit(EXIT_FAILURE);
     }
 
-
-    for (int i = 1; i < MAX_ALLOCATIONS; i++)
+    unsigned long results[MAX_ALLOCATIONS][2];
+    clock_t seed = clock();
+    for (int i = 0; i < MAX_ALLOCATIONS; i++)
     {
-        unsigned long *result = test_malloc(i, find_free_block);
+        unsigned long *result = test_malloc(i, find_free_block, seed);
+        results[i][0] = result[0];
+        results[i][1] = result[1];
 
         printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
-        append_to_file(filename, result[0], result[1]);
+    }
+    for (int i = 0; i < MAX_ALLOCATIONS; i++)
+    {
+       unsigned long *result = results[i];
+       append_to_file(filename, result[0], result[1]);
     }
 
 
     fclose(fp);
 }
 
+void test_best_fit(int size, clock_t seed, int stop_index)
+{
+    stop_loop_index = stop_index;
+    unsigned long *result = test_malloc(size, &best_fit, seed);
+    printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+}
 
+void test_next_fit(int size, clock_t seed, int stop_index)
+{
+    stop_loop_index = stop_index;
+    unsigned long *result = test_malloc(size, &next_fit, seed);
+    printf("Next Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+}
+
+void test_first_fit(int size, clock_t seed, int stop_index)
+{
+    stop_loop_index = stop_index;
+    unsigned long *result = test_malloc(size, &first_fit, seed);
+    printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
+}
 
 int main(void)
 {
@@ -187,18 +217,7 @@ int main(void)
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
-    /*
-    printf("struct meta_data size: %zu, free(char): %zu,size(size_t): %zu ,ptr(void*): %zu, meta_data: %zu\n", sizeof(struct meta_data), sizeof(unsigned char),sizeof(size_t), sizeof(void *), (2* sizeof(meta_data)));
-    printf("Heap size: %zu\n", get_heap_size());
-    unsigned long *result = test_malloc(10000, &best_fit);
-    printf("Best Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    printf("Heap size: %zu\n", get_heap_size());
-    result = test_malloc(10000, &next_fit);
-    printf("Next Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    result = test_malloc(10000, &best_fit);
-    printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    result = test_malloc(10000, NULL);
-    printf("Standard Malloc: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
-    */ 
+    
+    //test_best_fit(10000,SEED, -1);
    
 }
