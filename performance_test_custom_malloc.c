@@ -169,22 +169,9 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
     for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
         unsigned long *result = test_malloc(i, find_free_block);
-        // char *str1 = to_string(result);
-        
-        // char* str2 = to_string(result2);
-
-        // fwrite(str1, strlen(str1), 1, fp);
-
-        // write(fp, result2, sizeof(unsigned long) * 2);
-        // write(fp, result3, sizeof(unsigned long) * 2);
 
         printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
         append_to_file(filename, result[0], result[1]);
-        // printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
-
-        // free(result1);
-        // free(result2);
-        //free(result);
     }
 
 

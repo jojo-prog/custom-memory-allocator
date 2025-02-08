@@ -30,7 +30,6 @@ void check_correct_meta_data(meta_data block)
     assert(block->prev >= mem_pool);
   }
   assert(block->size > 0);
-  assert(block->size < (size_t)(end - block));
 }
 
 // Searches for the smallest free block that is large enough to satisfy the memory request
@@ -56,10 +55,6 @@ meta_data best_fit(meta_data *prev, size_t size)
       *prev = current->prev;
       best_fit_ptr = current;
       min_size = current->size;
-      if (min_size == size)
-      {
-        break;
-      }
     }
     current = current->next;
   }
@@ -216,7 +211,6 @@ void split_block(meta_data block, size_t size)
   check_correct_meta_data(block);
   check_correct_meta_data(new_block);
 
-  splits_count++; // useful for performance analysis
 }
 
 /**
@@ -307,7 +301,6 @@ void release_memory_if_required()
     mem_pool = NULL;
     last_allocated = NULL;
     end_of_pool = NULL;
-    end_of_pool = NULL;
   }
   else
   {
@@ -318,7 +311,6 @@ void release_memory_if_required()
     {
       free_area_start->prev->next = NULL;
     }
-    end_of_pool = free_area_start->prev;
     end_of_pool = free_area_start->prev;
   }
   brk(reset);
@@ -377,14 +369,14 @@ void *custom_malloc(size_t size, meta_data (*find_free_block)(meta_data *prev, s
   {
     
     // allocate big chunk memory at once. Max of (Multiple of PAGE_SIZE,  MEM_ALLOC_LOT_SIZE)
-    /*
+    
     size_t x = (s / PAGE_SIZE) + 1;
     size_t prealloc_size = x * PAGE_SIZE; // makes sure that the size is multiple of PAGE_SIZE and not less than page size
     size_t allocate_size = MAX(prealloc_size, MEM_ALLOC_SIZE);
-    */
+    
     
     //"allocate_mem()" to request memory from the OS
-    if ((mem = allocate_mem(prev, s)) == NULL)
+    if ((mem = allocate_mem(prev, allocate_size)) == NULL)
     {
       return NULL;
     }
