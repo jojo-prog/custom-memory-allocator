@@ -216,7 +216,7 @@ void test_first_fit(int size, clock_t seed, int stop_index)
 int main(void)
 {
 
-     run_test("best_fit.txt", &best_fit);
+    run_test("best_fit.txt", &best_fit);
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
