@@ -140,6 +140,21 @@ char *to_string(unsigned long *result)
     return str;
 }
 
+void append_to_file(const char *filename, unsigned long v1, unsigned long v2) {
+    char buffer[50];  // Fixed buffer size, enough for two unsigned long and a newline
+    int length = snprintf(buffer, sizeof(buffer), "%lu %lu\n", v1, v2);
+    
+    if (length < 0 || (size_t ) length >= sizeof(buffer)) {
+        return;  // Handle error if snprintf fails
+    }
+
+    FILE *file = fopen(filename, "a");  // Open file in append mode
+    if (file) {
+        fwrite(buffer, 1, length, file);  // Append the formatted string to the file
+        fclose(file);
+    }
+}
+
 void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
 {
     FILE *fp = fopen(filename, "w");
@@ -149,14 +164,12 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         exit(EXIT_FAILURE);
     }
 
-    unsigned long results[MAX_ALLOCATIONS * 2];
 
     for (int i = 1; i < MAX_ALLOCATIONS; i++)
     {
         unsigned long *result = test_malloc(i, find_free_block);
         // char *str1 = to_string(result);
-        results[i] = result[0];
-        results[i + 1] = result[1];
+        
         // char* str2 = to_string(result2);
 
         // fwrite(str1, strlen(str1), 1, fp);
@@ -165,9 +178,7 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         // write(fp, result3, sizeof(unsigned long) * 2);
 
         printf("%d Average allocation duration: %lu, Average heap size: %lu\n", i, result[0], result[1]);
-
-        splits_count = 0;
-        frees_count = 0;
+        append_to_file(filename, result[0], result[1]);
         // printf("Next fit: Average allocation duration: %lu, Average heap size: %lu\n", result2[0], result2[1]);
 
         // free(result1);
@@ -175,15 +186,18 @@ void run_test(char *filename, meta_data (*find_free_block)(meta_data *, size_t))
         //free(result);
     }
 
-    fwrite(results, sizeof(unsigned long) * 2, MAX_ALLOCATIONS, fp);
 
     fclose(fp);
 }
 
+
+
 int main(void)
 {
 
-   // run_test("best_fit.txt", &best_fit);
+    run_test("best_fit.txt", &best_fit);
+    //run_test("next_fit.txt", &next_fit);
+    //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
     /*
     printf("Heap size: %zu\n", get_heap_size());
