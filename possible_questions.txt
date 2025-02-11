@@ -1,0 +1,24 @@
+What features did you implement?
+-->First Fit, Next Fit, Best Fit, Spitting and Merging blocks to avoid Frgamentation
+
+What is fragmentation? 
+-->Fragmentation is a problem in memory allocation where free memory is available, but it is not usable efficiently due to how it is distributed, making large allocations fail.
+
+How does your implementation handle it?
+1. Splitting blocks: because it reduces internal fragmentation
+2. Merging adjacent free blocks: reduces external fragmentation
+3.Best Fit strategy: minimizes wasted space
+
+How Fragmentation Affects Performance?
+1.Reduces available memory: because even if free memory is available, the allocation of large blocks might fail
+2.Increases allocation time: because searching for a suitable block takes longer
+
+Average Allocation Time analysis for each strategy:
+1.Standard malloc is the most efficient because it uses optimized binning and caching
+2.First Fit and Best Fit struggle with fragmentation, causing increased allocation times
+3.Next Fit offers an improvement by avoiding repeated scanning from the beginning
+
+Average heap Size analysis for each strategy:
+1.Standard malloc is the most efficient as it allocates memory in chunks and reuses freed space
+2.First Fit and Best Fit both suffer from fragmentation, causing unnecessary heap growth
+3.Next Fit leads to excessive heap expansion, making it the least efficient in memory usage
