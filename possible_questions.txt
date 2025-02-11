@@ -1,6 +1,5 @@
 What features did you implement?
 -->First Fit, Next Fit, Best Fit, Spitting and Merging blocks to avoid Fragmentation. Rounding the size to a multiple of 32 for better allingment
-mddddddd
 32*4 32*1 
 What is fragmentation? 
 -->Fragmentation is a problem in memory allocation where free memory is available, but it is not usable efficiently due to how it is distributed, making large allocations fail.
@@ -28,7 +27,7 @@ How did you test your strategies?
 1. running a loop n iterations. In the first stage of a loop iteration there is a 70% chance of allocation and 30% for a free. 
 After the loop has finished, the remaning memory will be freed. This represents a typical program.
 2. Test for different numbers of loop iterations. Compute the avarage amount of the heap size and allocation time for one allocation.
-3. if something fails the situation can be repreduced with a seed.
+3. if something fails the situation can be reproduced with a seed.
 4. Test each strategy by passing it to the malloc function.
 
 Why do you pass a function to your malloc function?
@@ -41,3 +40,9 @@ Why didnt you use LD_PRELOAD?
 1.  I thought it was inconvenient. It a lot went wrong while using it.
 
 Why didnt you test calloc an realloc?
+
+Constraints for testing:
+1.At most 10,000 allocations
+2.Maximum size per allocation is 4096 bytes
+3.70% chance of allocating and 30% chance of freeing memory
+4.Random seed initialization
