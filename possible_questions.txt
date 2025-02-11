@@ -1,6 +1,7 @@
 What features did you implement?
--->First Fit, Next Fit, Best Fit, Spitting and Merging blocks to avoid Frgamentation
-
+-->First Fit, Next Fit, Best Fit, Spitting and Merging blocks to avoid Fragmentation. Rounding the size to a multiple of 32 for better allingment
+mddddddd
+32*4 32*1 
 What is fragmentation? 
 -->Fragmentation is a problem in memory allocation where free memory is available, but it is not usable efficiently due to how it is distributed, making large allocations fail.
 
