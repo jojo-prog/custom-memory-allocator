@@ -213,15 +213,14 @@ void test_first_fit(int size, clock_t seed, int stop_index)
     printf("First Fit: Average allocation duration: %lu, Average heap size: %lu\n", result[0], result[1]);
 }
 
+
+
 int main(void)
 {
-
-    //run_test("best_fit.txt", &best_fit);
+    run_test("best_fit.txt", &best_fit);
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
+    void* p1 = custom_malloc(100, &next_fit);
 
-
-
-   
 }

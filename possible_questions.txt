@@ -22,3 +22,21 @@ Average heap Size analysis for each strategy:
 1.Standard malloc is the most efficient as it allocates memory in chunks and reuses freed space
 2.First Fit and Best Fit both suffer from fragmentation, causing unnecessary heap growth
 3.Next Fit leads to excessive heap expansion, making it the least efficient in memory usage
+
+How did you test your strategies?
+1. running a loop n iterations. In the first stage of a loop iteration there is a 70% chance of allocation and 30% for a free. 
+After the loop has finished, the remaning memory will be freed. This represents a typical program.
+2. Test for different numbers of loop iterations. Compute the avarage amount of the heap size and allocation time for one allocation.
+3. if something fails the situation can be repreduced with a seed.
+4. Test each strategy by passing it to the malloc function.
+
+Why do you pass a function to your malloc function?
+1. because we thought it would be more convenient for the user to choose there own 
+allocation strategy, because our implementation is not perfect. 
+So they can choose a alloction strategy based on their use case, one of the preimplemented or their own. (Worst Case, Quick Fit)
+If they dont have a use case they could choose a random one of the preimplemented strategies.
+
+Why didnt you use LD_PRELOAD?
+1.  I thought it was inconvenient. It a lot went wrong while using it.
+
+Why didnt you test calloc an realloc?
