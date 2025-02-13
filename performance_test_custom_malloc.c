@@ -221,6 +221,5 @@ int main(void)
     //run_test("next_fit.txt", &next_fit);
     //run_test("first_fit.txt", &first_fit);
     // test_next_fit();
-    void* p1 = custom_malloc(100, &next_fit);
 
 }
